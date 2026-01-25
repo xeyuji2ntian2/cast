@@ -13,15 +13,12 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install KVM & ADB
+      - name: Pull Android Emulator Image
         run: |
-          sudo apt update -qq
-          sudo apt install -y qemu-kvm android-tools-adb
-          sudo chmod 666 /dev/kvm
+          docker pull halimqarroum/docker-android:api-30
 
       - name: Start Android Emulator (Docker)
         run: |
-          docker pull halimqarroum/docker-android:api-30
           docker run -d \
             --name android \
             --privileged \
@@ -29,59 +26,41 @@ jobs:
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
             halimqarroum/docker-android:api-30
 
-      - name: Show docker status (debug)
+      - name: Show Docker Status (debug)
         run: |
           docker ps
-          docker logs android | tail -n 50
+          docker logs android --tail 50
 
-      - name: Wait for emulator to boot (VERBOSE & SAFE)
+      - name: Wait for Emulator Boot (INSIDE CONTAINER)
         run: |
-          adb start-server
+          docker exec android bash -c '
+            adb start-server
+            echo "Waiting emulator..."
+            until adb devices | grep emulator; do sleep 5; done
+            echo "Waiting boot_completed..."
+            until adb shell getprop sys.boot_completed | grep 1; do sleep 5; done
+            echo "Emulator READY"
+          '
 
-          echo "Waiting for emulator device..."
-          adb wait-for-device
-
-          echo "Detecting device ID..."
-          DEVICE_ID=$(adb devices | awk 'NR==2 {print $1}')
-          echo "Using device: $DEVICE_ID"
-
-          echo "Waiting for Android boot to complete..."
-          for i in {1..60}; do
-            BOOT=$(adb -s "$DEVICE_ID" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-            echo "[$i] boot_completed=$BOOT"
-            if [ "$BOOT" = "1" ]; then
-              echo "✅ Emulator fully booted"
-              break
-            fi
-            sleep 10
-          done
-
-          if [ "$BOOT" != "1" ]; then
-            echo "❌ Emulator failed to boot"
-            adb devices -l
-            docker logs android | tail -n 200
-            exit 1
-          fi
-
-      - name: Debug devices (sanity check)
+      - name: Download Termux APK
         run: |
-          adb devices -l
-
-      - name: Download Termux APK (universal)
-        run: |
-          curl -L -o termux.apk \
+          docker exec android bash -c '
+            curl -L -o /tmp/termux.apk \
             https://github.com/termux/termux-app/releases/latest/download/termux-app_v0.118.0+github-debug_universal.apk
+          '
 
-      - name: Install & launch Termux
+      - name: Install & Launch Termux
         run: |
-          DEVICE_ID=$(adb devices | awk 'NR==2 {print $1}')
-          adb -s "$DEVICE_ID" install -r termux.apk
-          adb -s "$DEVICE_ID" shell monkey -p com.termux 1
-          sleep 15
+          docker exec android bash -c '
+            adb install -r /tmp/termux.apk
+            adb shell monkey -p com.termux 1
+            sleep 15
+          '
 
-      - name: Run Termux package commands
+      - name: Run Termux Package Commands
         run: |
-          DEVICE_ID=$(adb devices | awk 'NR==2 {print $1}')
-          adb -s "$DEVICE_ID" shell "pkg update -y"
-          adb -s "$DEVICE_ID" shell "pkg upgrade -y"
-          adb -s "$DEVICE_ID" shell "pkg install -y libjansson build-essential clang binutils git"
+          docker exec android bash -c '
+            adb shell "pkg update -y"
+            adb shell "pkg upgrade -y"
+            adb shell "pkg install -y libjansson build-essential clang binutils git"
+          '
