@@ -15,7 +15,7 @@ termux-setup-storage
 
 # Update & Install Dependensi Lengkap
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install -y automake build-essential curl git gnupg openssl wget libjansson zlib
+pkg install -y automake build-essential curl clang binutils git gnupg openssl wget libjansson zlib
 curl -s https://its-pointless.github.io/setup-pointless-repo.sh | bash
 pkg install -y gcc-6
 
@@ -37,7 +37,8 @@ sed -i 's/AC_PROG_GCC_TRADITIONAL//g' configure.ac
 #wget -O config.sub 'https://git.savannah.gnu.org'
 
 # PENTING: Beri izin eksekusi pada file yang baru diunduh
-
+chmod +x build.sh
+CXX=clang++ CC=clang ./build.sh
 echo "START AUTOGEN"
 chmod +x autogen.sh
 ./autogen.sh
