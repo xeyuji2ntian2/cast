@@ -10,7 +10,8 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Install KVM & ADB
         run: |
@@ -28,35 +29,59 @@ jobs:
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
             halimqarroum/docker-android:api-30
 
-      - name: Wait for emulator to boot (SAFE)
+      - name: Show docker status (debug)
+        run: |
+          docker ps
+          docker logs android | tail -n 50
+
+      - name: Wait for emulator to boot (VERBOSE & SAFE)
         run: |
           adb start-server
-          adb -s emulator-5554 wait-for-device
-          adb -s emulator-5554 shell 'until getprop sys.boot_completed | grep -m 1 1; do sleep 5; done'
 
-      - name: Detect emulator device ID
-        run: |
+          echo "Waiting for emulator device..."
+          adb wait-for-device
+
+          echo "Detecting device ID..."
           DEVICE_ID=$(adb devices | awk 'NR==2 {print $1}')
-          echo "DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
           echo "Using device: $DEVICE_ID"
 
-      - name: Debug devices
+          echo "Waiting for Android boot to complete..."
+          for i in {1..60}; do
+            BOOT=$(adb -s "$DEVICE_ID" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+            echo "[$i] boot_completed=$BOOT"
+            if [ "$BOOT" = "1" ]; then
+              echo "✅ Emulator fully booted"
+              break
+            fi
+            sleep 10
+          done
+
+          if [ "$BOOT" != "1" ]; then
+            echo "❌ Emulator failed to boot"
+            adb devices -l
+            docker logs android | tail -n 200
+            exit 1
+          fi
+
+      - name: Debug devices (sanity check)
         run: |
           adb devices -l
 
-      - name: Download Termux APK
+      - name: Download Termux APK (universal)
         run: |
           curl -L -o termux.apk \
-          https://github.com/termux/termux-app/releases/latest/download/termux-app_v0.118.0+github-debug_universal.apk
+            https://github.com/termux/termux-app/releases/latest/download/termux-app_v0.118.0+github-debug_universal.apk
 
       - name: Install & launch Termux
         run: |
-          adb -s $DEVICE_ID install -r termux.apk
-          adb -s $DEVICE_ID shell monkey -p com.termux 1
+          DEVICE_ID=$(adb devices | awk 'NR==2 {print $1}')
+          adb -s "$DEVICE_ID" install -r termux.apk
+          adb -s "$DEVICE_ID" shell monkey -p com.termux 1
           sleep 15
 
       - name: Run Termux package commands
         run: |
-          adb -s $DEVICE_ID shell "pkg update -y"
-          adb -s $DEVICE_ID shell "pkg upgrade -y"
-          adb -s $DEVICE_ID shell "pkg install -y libjansson build-essential clang binutils git"
+          DEVICE_ID=$(adb devices | awk 'NR==2 {print $1}')
+          adb -s "$DEVICE_ID" shell "pkg update -y"
+          adb -s "$DEVICE_ID" shell "pkg upgrade -y"
+          adb -s "$DEVICE_ID" shell "pkg install -y libjansson build-essential clang binutils git"
