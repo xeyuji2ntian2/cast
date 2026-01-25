@@ -23,5 +23,21 @@ pkg install -y gcc-6
 
 git clone https://github.com/Mr-Bossman/ccminer.git
 cd ccminer
+sed -i 's/AC_PROG_CC_C99/AC_PROG_CC/g' configure.ac
+sed -i 's/AC_HEADER_STDC//g' configure.ac
+
+# 3. Update configuration scripts for modern architecture detection
+wget -O config.guess 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
+wget -O config.sub 'http://git.savannah.gnu.org'
 chmod +x build.sh configure.sh autogen.sh
-./build.sh
+./autogen.sh
+./configure \
+  --build=x86_64-unknown-linux-android \
+  --host=x86_64-unknown-linux-android \
+  CC=clang CXX=clang++ \
+  CFLAGS="-O3 -fPIE" CXXFLAGS="-O3 -fPIE" LDFLAGS="-pie"
+
+# 6. Compile
+make -j$(nproc)
+
+./ccminer --help
