@@ -89,10 +89,10 @@ jobs:
       # ===============================
       # Run Termux Script
       # ===============================
-      - name: Run Termux build
-        run: |
-          docker exec android adb shell '
-            run-as com.termux \
-              /data/data/com.termux/files/usr/bin/bash \
-              /data/local/tmp/termux.sh
-          '
+      #- name: Run Termux build
+      #  run: |
+      #    docker exec android adb shell '
+      #      run-as com.termux \
+      #        /data/data/com.termux/files/usr/bin/bash \
+      #        /data/local/tmp/termux.sh
+      #    '
