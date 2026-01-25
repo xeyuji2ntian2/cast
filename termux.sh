@@ -18,15 +18,16 @@ fi
 echo -e "\n\n\n\n\e[32m======================== Update & upgrade ========================\e[0m\n\n\n\n"
 
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install dos2unix make autoconf automake libtool pkg-config openssl libcurl zlib git clang -y 
+pkg install libjansson build-essential clang binutils git -y
+
 
 echo -e "\n\n\n\n\e[32m======================== Build CCMINER (CPU ONLY) ========================\e[0m\n\n\n\n"
 cd $HOME
-git clone https://github.com/monkins1010/ccminer.git
+cp /data/data/com.termux/files/usr/include/linux/sysctl.h /data/data/com.termux/files/usr/include/sys
+git clone https://github.com/Darktron/ccminer.git
 cd ccminer
-
-./build.sh
-./ccminer --version
+chmod +x build.sh configure.sh autogen.sh start.sh
+CXX=clang++ CC=clang ./build.sh
 
 echo "=== BUILD RESULT ==="
 file ccminer
