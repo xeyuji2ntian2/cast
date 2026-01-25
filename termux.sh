@@ -15,7 +15,7 @@ lscpu
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install  -y automake build-essential curl git gnupg openssl
 curl -s https://its-pointless.github.io/setup-pointless-repo.sh | bash
-pkg install gcc-6
+pkg install -y gcc-6
 
 
 git clone --single-branch -b ARM https://github.com/monkins1010/ccminer.git
