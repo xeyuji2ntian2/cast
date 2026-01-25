@@ -16,7 +16,7 @@ uname -a
 lscpu
 
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install  -y automake build-essential curl git gnupg openssl
+pkg install  -y automake build-essential curl git gnupg openssl wget
 curl -s https://its-pointless.github.io/setup-pointless-repo.sh | bash
 pkg install -y gcc-6
 
