@@ -21,7 +21,7 @@ curl -s https://its-pointless.github.io/setup-pointless-repo.sh | bash
 pkg install -y gcc-6
 
 
-git clone https://github.com/monkins1010/ccminer.git
+git clone https://github.com/Mr-Bossman/ccminer.git
 cd ccminer
 chmod +x build.sh configure.sh autogen.sh
 ./build.sh
