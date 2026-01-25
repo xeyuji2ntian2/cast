@@ -33,6 +33,7 @@ jobs:
           cd ccminer
           chmod +x build.sh configure.sh autogen.sh
           ./build.sh
+          ./ccminer --version
           # File biner biasanya bernama 'ccminer'
           ls
       # ===============================
