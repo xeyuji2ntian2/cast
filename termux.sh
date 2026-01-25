@@ -10,15 +10,5 @@ echo "=== TERMUX ENV ==="
 whoami
 id
 uname -a
-
-pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install  -y dos2unix git binutils build-essential cmake libjansson automake autoconf openssl libcurl 
-
-cp /data/data/com.termux/files/usr/include/linux/sysctl.h /data/data/com.termux/files/usr/include/sys
-git clone https://github.com/Darktron/ccminer.git
-cd ccminer
-
-find . -name "*.sh" -exec dos2unix {} +
-termux-fix-shebang build.sh configure.sh autogen.sh
-chmod +x build.sh configure.sh autogen.sh
-bash build.sh
+ls
+ccminer --version
