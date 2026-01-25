@@ -15,43 +15,43 @@ if [ "$(id -u)" = "0" ]; then
   exit 1
 fi
 
-echo "============ Update & upgrade ============"
+echo -e "\e[32m======================== Update & upgrade ========================\e[0m\n\n\n\n"
 yes | pkg update && pkg upgrade -y
 
 
 
-echo "============ install clang ============"  
-yes | pkg install clang -y
 
-echo "============ install make ============"  
+echo -e "\e[32m======================== install make ========================\e[0m\n\n\n\n"  
 yes | pkg install make -y
 
-echo "============ install autoconf ============"  
+echo -e "\e[32m======================== install autoconf ========================\e[0m\n\n\n\n"  
 yes | pkg install autoconf -y 
 
-echo "============ install automake ============"  
+echo -e "\e[32m======================== install automake ========================\e[0m\n\n\n\n"  
 yes | pkg install automake -y
 
-echo "============ install libtool ============"  
+echo -e "\e[32m======================== install libtool ========================\e[0m\n\n\n\n"  
 yes | pkg install libtool -y
 
-echo "============ install pkg-config============"  
+echo -e "\e[32m======================== install pkg-config========================\e[0m\n\n\n\n"  
 yes | pkg install pkg-config -y
 
-echo "============ install openssl ============"  
+echo -e "\e[32m======================== install openssl ========================\e[0m\n\n\n\n"  
 yes | pkg install openssl -y
 
-echo "============ install libcurl ============"  
+echo -e "\e[32m======================== install libcurl ========================\e[0m\n\n\n\n"  
 yes | pkg install libcurl -y
 
-echo "============ install zlib ============"  
+echo -e "\e[32m======================== install zlib ========================\e[0m\n\n\n\n"  
 yes | pkg install zlib -y
 
-echo "============ install git ============"  
+echo -e "\e[32m======================== install git ========================\e[0m\n\n\n\n"  
 yes | pkg install git -y
 
-echo "============ Build CCMINER (CPU ONLY) ============"
+echo -e "\e[32m======================== install clang ========================\e[0m\n\n\n\n"  
+yes | pkg install clang -y
 
+echo -e "\e[32m======================== Build CCMINER (CPU ONLY) ========================\e[0m\n\n\n\n"
 cd $HOME
 git clone https://github.com/Oink70/ccminer.git
 cd ccminer
