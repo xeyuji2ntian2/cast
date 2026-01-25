@@ -11,5 +11,12 @@ whoami
 id
 uname -a
 ls
-chmod +x ccminer
-./ccminer --version
+
+pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
+pkg install  -y curl xz-utils wget libsodium
+curl -L https://github.com/hellcatz/hminer/releases/download/v0.59.1/hellminer_linux64.tar.gz -o hellminer.tar.gz
+tar -xf hellminer.tar.gz -C hellminer
+cd hellminer
+ls
+./hellminer --help
+
