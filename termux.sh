@@ -22,29 +22,11 @@ pkg install dos2unix make autoconf automake libtool pkg-config openssl libcurl z
 
 echo -e "\n\n\n\n\e[32m======================== Build CCMINER (CPU ONLY) ========================\e[0m\n\n\n\n"
 cd $HOME
-git clone https://github.com/Oink70/ccminer-verus.git
-cd ccminer-verus
+git clone https://github.com/monkins1010/ccminer.git
+cd ccminer
 
-export CC=clang
-export CXX=clang++
-export CFLAGS="-O3 -march=native"
-export CXXFLAGS="-O3 -march=native"
-
-
-./autogen.sh
-
-export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-
-./configure \
-  --disable-cuda \
-  --disable-opencl \
-  --with-crypto \
-  --with-curl \
-  CPPFLAGS="-I$PREFIX/include" \
-  LDFLAGS="-L$PREFIX/lib" \
-  --prefix=$PREFIX
-
-make -j$(nproc)
+./build.sh
+./ccminer --version
 
 echo "=== BUILD RESULT ==="
 file ccminer
