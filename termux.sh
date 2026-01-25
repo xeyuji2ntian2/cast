@@ -12,7 +12,10 @@ id
 uname -a
 
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install -y libjansson wget
-wget https://raw.githubusercontent.com/tempatbloger/Mining-verus-termux/refs/heads/branchname/ccminer
-chmod +x ccminer
-bash ccminer --help
+pkg install  -y git build-essential cmake libjansson automake autoconf openssl
+dos2unix "$0" 2>/dev/null || true
+
+git clone https://github.com/monkins1010/ccminer.git
+cd ccminer
+chmod +x build.sh configure.sh autogen.sh
+./build.sh
