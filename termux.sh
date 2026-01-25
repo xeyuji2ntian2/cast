@@ -15,42 +15,42 @@ if [ "$(id -u)" = "0" ]; then
   exit 1
 fi
 
-echo "=== Update & upgrade ==="
+echo "============ Update & upgrade ============"
 yes | pkg update && pkg upgrade -y
 
 
 
-echo "=== install git ==="  
-yes | pkg install git -y
-
-echo "=== install clang ==="  
+echo "============ install clang ============"  
 yes | pkg install clang -y
 
-echo "=== install make ==="  
+echo "============ install make ============"  
 yes | pkg install make -y
 
-echo "=== install autoconf ==="  
+echo "============ install autoconf ============"  
 yes | pkg install autoconf -y 
 
-echo "=== install automake ==="  
+echo "============ install automake ============"  
 yes | pkg install automake -y
 
-echo "=== install libtool ==="  
+echo "============ install libtool ============"  
 yes | pkg install libtool -y
 
-echo "=== install pkg-config==="  
+echo "============ install pkg-config============"  
 yes | pkg install pkg-config -y
 
-echo "=== install openssl ==="  
+echo "============ install openssl ============"  
 yes | pkg install openssl -y
 
-echo "=== install libcurl ==="  
+echo "============ install libcurl ============"  
 yes | pkg install libcurl -y
 
-echo "=== install zlib ==="  
+echo "============ install zlib ============"  
 yes | pkg install zlib -y
 
-echo "=== Build CCMINER (CPU ONLY) ==="
+echo "============ install git ============"  
+yes | pkg install git -y
+
+echo "============ Build CCMINER (CPU ONLY) ============"
 
 cd $HOME
 git clone https://github.com/Oink70/ccminer.git
