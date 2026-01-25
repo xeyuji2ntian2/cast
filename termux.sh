@@ -11,7 +11,7 @@ whoami
 id
 uname -a
 
-yes | pkg update
+pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install libcurl openssl libjansson automake build-essential git -y
 git clone --single-branch -b ARM https://github.com/monkins1010/ccminer.git
 cd ccminer
