@@ -89,8 +89,11 @@ jobs:
           echo ===============================
           echo Update & deps
           echo ===============================
-          yes | pkg update
-          yes | pkg upgrade -y
+          yes | pkg update && pkg upgrade -y
+
+          echo ===============================
+          echo pkg install 
+          echo ===============================
 
           yes | pkg install \
             git \
