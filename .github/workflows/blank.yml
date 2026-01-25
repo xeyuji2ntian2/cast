@@ -74,11 +74,9 @@ jobs:
       - name: Push Termux APK
         run: docker cp termux.apk android:/tmp/termux.apk
 
-      - name: Install Termux via pm
+      - name: Install Termux (NO STREAMING)
         run: |
-          docker exec android adb shell '
-            pm install -r /tmp/termux.apk
-          '
+          docker exec android adb install --no-streaming -r /tmp/termux.apk
 
       - name: Launch Termux once (init filesystem)
         run: |
