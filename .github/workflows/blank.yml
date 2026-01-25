@@ -7,56 +7,47 @@ on:
 jobs:
   termux:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Enable KVM
+      - name: Enable KVM & adb
         run: |
           sudo apt update -qq
-          sudo apt install -y qemu-kvm
+          sudo apt install -y qemu-kvm android-tools-adb
           sudo chmod 666 /dev/kvm
 
-      - name: Start Android Emulator (docker-android)
+      - name: Start Android Emulator
         run: |
+          docker pull halimqarroum/docker-android:api-30
           docker run -d \
             --name android \
             --privileged \
             -p 5555:5555 \
-            -e DEVICE="pixel_3" \
-            -e ANDROID_VERSION="11.0" \
+            -e DEVICE=pixel \
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
-            hqarroum/docker-android:api-30
+            halimqarroum/docker-android:api-30
 
       - name: Wait emulator boot
         run: |
-          sudo apt install -y android-tools-adb
           adb connect localhost:5555
           adb wait-for-device
-          adb shell 'while [[ "$(getprop sys.boot_completed)" != "1" ]]; do sleep 5; done'
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
+          adb shell 'until getprop sys.boot_completed | grep -m 1 1; do sleep 5; done'
 
-      - name: Download Termux APK
+      - name: Download Termux APK (universal)
         run: |
-          curl -L -o termux.apk https://github.com/termux/termux-app/releases/download/v0.118.0/termux-app_v0.118.0+github-debug_arm64-v8a.apk
+          curl -L -o termux.apk \
+          https://github.com/termux/termux-app/releases/latest/download/termux-app_v0.118.0+github-debug_universal.apk
 
-      - name: Install Termux
+      - name: Install & open Termux
         run: |
           adb install -r termux.apk
           adb shell monkey -p com.termux 1
+          sleep 15
 
-      - name: Initialize Termux & install packages
+      - name: Run Termux commands
         run: |
-          adb shell <<'EOF'
-          am start -n com.termux/.HomeActivity
-          sleep 10
-
-          echo "yes | pkg update && pkg upgrade -y" | sh -c 'su -c cat > /data/data/com.termux/files/home/setup.sh'
-          echo "yes | pkg install libjansson build-essential clang binutils git -y" >> /data/data/com.termux/files/home/setup.sh
-
-          chmod +x /data/data/com.termux/files/home/setup.sh
-          su -c /data/data/com.termux/files/home/setup.sh
-          EOF
+          adb shell "pkg update -y"
+          adb shell "pkg upgrade -y"
+          adb shell "pkg install -y libjansson build-essential clang binutils git"
