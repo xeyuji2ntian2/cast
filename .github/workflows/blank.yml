@@ -82,7 +82,7 @@ jobs:
           docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
 
           docker cp ccminer/ccminer android:/tmp/ccminer
-          docker exec android adb push /tmp/ccminer /data/local/tmp/ccmmminer
+          docker exec android adb push /tmp/ccminer /data/local/tmp/ccminer
       # ===============================
       # Run Termux Script
       # ===============================
