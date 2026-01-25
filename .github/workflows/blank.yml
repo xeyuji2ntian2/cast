@@ -24,17 +24,13 @@ jobs:
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
             halimqarroum/docker-android:api-30
 
-      - name: Wait Emulator FULLY READY
+      - name: Wait Emulator READY
         run: |
           docker exec android bash -c '
             adb start-server
-
-            until adb devices | grep emulator; do sleep 5; done
             until adb devices | grep "emulator-5554[[:space:]]*device"; do sleep 5; done
             until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
-            until adb shell pm list packages >/dev/null 2>&1; do sleep 5; done
-
-            echo "✅ EMULATOR READY"
+            echo "✅ Emulator ready"
           '
 
       - name: Download Termux APK (F-Droid)
@@ -56,13 +52,17 @@ jobs:
             sleep 20
           '
 
-      - name: Run Termux commands (CORRECT WAY)
+      - name: Run Termux commands (ROOT METHOD – WORKING)
         run: |
           docker exec android bash -c '
-            adb shell run-as com.termux bash -lc "
-              termux-change-repo
-              pkg update -y
-              pkg upgrade -y
-              pkg install -y libjansson build-essential clang binutils git
+            adb shell su -c "
+              export HOME=/data/data/com.termux/files/home
+              export PREFIX=/data/data/com.termux/files/usr
+              export PATH=\$PREFIX/bin:\$PATH
+              \$PREFIX/bin/bash -lc \"
+                pkg update -y
+                pkg upgrade -y
+                pkg install -y libjansson build-essential clang binutils git
+              \"
             "
           '
