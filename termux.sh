@@ -22,6 +22,7 @@ git clone --single-branch -b ARM https://github.com/monkins1010/ccminer.git
 cd ccminer
 chmod +x build.sh autogen.sh configure.sh
 ./autogen.sh
+./configure.sh
 ./build.sh
 
 ./ccminer --help
