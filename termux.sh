@@ -39,7 +39,7 @@ sed -i 's/AC_PROG_GCC_TRADITIONAL//g' configure.ac
 # PENTING: Beri izin eksekusi pada file yang baru diunduh
 echo "START BUILD"
 chmod +x build.sh configure.sh autogen.sh
-CXX=clang++ CC=clang ./build.sh
+CXX=clang++ CC=clang bash build.sh
 
 # Test run
 ./ccminer --help
