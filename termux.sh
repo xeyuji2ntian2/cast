@@ -25,18 +25,23 @@ cd ccminer
 # Fix Obsolete Macros
 sed -i 's/AC_PROG_CC_C99/AC_PROG_CC/g' configure.ac
 sed -i 's/AC_HEADER_STDC//g' configure.ac
-
+sed -i 's/AC_CANONICAL_SYSTEM/AC_CANONICAL_TARGET/g' configure.ac
+sed -i 's/AC_PROG_GCC_TRADITIONAL//g' configure.ac
 # Update config.guess & config.sub (Link diperbaiki agar mengunduh file asli)
+
 wget -O config.guess 'https://git.savannah.gnu.org'
 wget -O config.sub 'https://git.savannah.gnu.org'
+
+# PENTING: Beri izin eksekusi pada file yang baru diunduh
+chmod +x config.guess config.sub
 
 echo "START AUTOGEN"
 chmod +x autogen.sh
 ./autogen.sh
 
-# Configure khusus x86_64 Android
+# 3. Jalankan Configure dengan Bash eksplisit jika perlu
 echo "START CONFIGURE"
-./configure \
+bash ./configure \
   --build=x86_64-unknown-linux-android \
   --host=x86_64-unknown-linux-android \
   CC=clang CXX=clang++ \
