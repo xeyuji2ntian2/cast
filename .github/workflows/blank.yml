@@ -22,19 +22,24 @@ jobs:
           path: termux.apk
           key: termux-apk-118
 
-      - name: Download Termux APK (cached)
+      - name: Download Termux APK (F-Droid)
         run: |
           if [ ! -f termux.apk ]; then
-            curl -L -o termux.apk https://f-droid.org/repo/com.termux_118.apk
+            echo "⬇️ Downloading Termux APK..."
+            curl -L --retry 5 --retry-delay 5 \
+              -o termux.apk \
+              https://f-droid.org/repo/com.termux_118.apk
+          else
+            echo "✅ Termux APK loaded from cache"
           fi
 
       # ===============================
-      # Android Emulator
+      # Android Emulator (Docker)
       # ===============================
-      - name: Pull Emulator Image
+      - name: Pull Android Emulator Image
         run: docker pull halimqarroum/docker-android:api-30
 
-      - name: Start Emulator
+      - name: Start Android Emulator
         run: |
           docker run -d \
             --name android \
@@ -43,47 +48,72 @@ jobs:
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
             halimqarroum/docker-android:api-30
 
-      - name: Wait Emulator READY
+      - name: Wait Emulator FULLY READY
         run: |
           docker exec android bash -c '
             adb start-server
-            until adb devices | grep emulator-5554; do sleep 5; done
-            until adb shell getprop sys.boot_completed | grep 1; do sleep 5; done
+
+            echo "⏳ waiting emulator online..."
+            until adb devices | grep "emulator-5554[[:space:]]*device"; do sleep 5; done
+
+            echo "⏳ waiting boot completed..."
+            until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
+
+            echo "⏳ waiting package manager..."
             until adb shell pm list packages >/dev/null 2>&1; do sleep 5; done
+
+            echo "✅ Emulator READY"
           '
 
       # ===============================
       # Install Termux
       # ===============================
+      - name: Push Termux APK
+        run: docker cp termux.apk android:/tmp/termux.apk
+
       - name: Install Termux
         run: |
-          docker cp termux.apk android:/tmp/termux.apk
-          docker exec android adb install -r /tmp/termux.apk
-
-      - name: Launch Termux once
-        run: |
-          docker exec android adb shell monkey \
-            -p com.termux \
-            -c android.intent.category.LAUNCHER 1
-          sleep 20
-
-      # ===============================
-      # RUN TERMUX (OUTPUT FIXED)
-      # ===============================
-      - name: Run Termux package commands (REAL FIX)
-        run: |
-          docker exec -t android adb shell su 0 /data/data/com.termux/files/usr/bin/bash -lc '
-            export HOME=/data/data/com.termux/files/home
-            export PREFIX=/data/data/com.termux/files/usr
-            export PATH=$PREFIX/bin:$PATH
-
-            echo "=== TERMUX ENV ==="
-            whoami
-            echo "PREFIX=$PREFIX"
-            echo "PATH=$PATH"
-            echo "================="
-
-            pkg update -y
-            pkg upgrade -y
-            pkg install -y libjansson build-essential clang binutils git
+          docker exec android bash -c '
+            adb install -r /tmp/termux.apk
           '
+
+      - name: Launch Termux once (init filesystem)
+        run: |
+          docker exec android bash -c '
+            adb shell monkey -p com.termux -c android.intent.category.LAUNCHER 1
+            sleep 25
+          '
+
+      # ===============================
+      # Create Termux Script (NO QUOTE HELL)
+      # ===============================
+      - name: Create Termux command script
+        run: |
+          cat <<'EOF' > termux.sh
+          export HOME=/data/data/com.termux/files/home
+          export PREFIX=/data/data/com.termux/files/usr
+          export PATH=$PREFIX/bin:$PATH
+
+          echo "=== TERMUX ENV ==="
+          whoami
+          echo "PREFIX=$PREFIX"
+          echo "PATH=$PATH"
+          echo "================="
+
+          pkg update -y
+          pkg upgrade -y
+          pkg install -y libjansson build-essential clang binutils git
+          EOF
+
+          docker cp termux.sh android:/data/local/tmp/termux.sh
+          docker exec android chmod +x /data/local/tmp/termux.sh
+
+      # ===============================
+      # Run Termux Commands (FINAL FIX)
+      # ===============================
+      - name: Run Termux package commands
+        run: |
+          docker exec -t android \
+            adb shell su 0 \
+            /data/data/com.termux/files/usr/bin/bash \
+            /data/local/tmp/termux.sh
