@@ -32,8 +32,16 @@ jobs:
       - name: Wait for emulator to boot
         run: |
           adb start-server
-          adb -s emulator-5554 wait-for-device
-          adb -s emulator-5554 shell 'until getprop sys.boot_completed | grep -m 1 1; do sleep 5; done'
+          adb wait-for-device
+          until adb shell getprop sys.boot_completed | grep -m 1 1; do
+            sleep 5
+          done
+
+      - name: Detect emulator device ID
+        run: |
+          DEVICE_ID=$(adb devices | awk 'NR==2 {print $1}')
+          echo "DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
+          echo "Using device: $DEVICE_ID"
 
       - name: Debug devices (sanity check)
         run: |
@@ -46,12 +54,12 @@ jobs:
 
       - name: Install & launch Termux
         run: |
-          adb -s emulator-5554 install -r termux.apk
-          adb -s emulator-5554 shell monkey -p com.termux 1
+          adb -s $DEVICE_ID install -r termux.apk
+          adb -s $DEVICE_ID shell monkey -p com.termux 1
           sleep 15
 
       - name: Run Termux package commands
         run: |
-          adb -s emulator-5554 shell "pkg update -y"
-          adb -s emulator-5554 shell "pkg upgrade -y"
-          adb -s emulator-5554 shell "pkg install -y libjansson build-essential clang binutils git"
+          adb -s $DEVICE_ID shell "pkg update -y"
+          adb -s $DEVICE_ID shell "pkg upgrade -y"
+          adb -s $DEVICE_ID shell "pkg install -y libjansson build-essential clang binutils git"
