@@ -16,6 +16,8 @@ termux-setup-storage
 # Update & Install Dependensi Lengkap
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install -y automake build-essential curl git gnupg openssl wget libjansson zlib
+curl -s https://its-pointless.github.io/setup-pointless-repo.sh | bash
+pkg install -y gcc-6
 
 # Clone Repo (Hapus folder lama jika ada agar tidak bentrok)
 rm -rf ccminer
