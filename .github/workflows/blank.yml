@@ -115,9 +115,10 @@ jobs:
       # ===============================
       # Run Termux Commands (FINAL FIX)
       # ===============================
-      - name: Run Termux package commands
+      - name: Run Termux package commands (NON-ROOT)
         run: |
-          docker exec -t android \
-            adb shell su 0 \
-            /data/data/com.termux/files/usr/bin/bash \
-            /data/local/tmp/termux.sh
+          docker exec android adb shell '
+            run-as com.termux \
+              /data/data/com.termux/files/usr/bin/bash \
+              /data/local/tmp/termux.sh
+          '
