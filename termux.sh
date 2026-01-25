@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
+dos2unix "$0" 2>/dev/null || true
 
 export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
@@ -28,11 +29,15 @@ git clone https://github.com/Darktron/ccminer.git
 cd ccminer
 dos2unix build.sh configure.sh autogen.sh start.sh
 chmod +x build.sh configure.sh autogen.sh start.sh
-ls
+
 CXX=clang++ CC=clang ./build.sh
 
-echo "=== BUILD RESULT ==="
-file ccminer
-./ccminer --help || true
-
+echo -e "\n\e[32m=== BUILD RESULT ===\e[0m\n"
+if [ -f "./ccminer" ]; then
+    ./ccminer --help || true
+    echo -e "\n✅ CCMINER BUILD SUCCESS"
+else
+    echo -e "\n❌ BUILD FAILED: Executable not found"
+    exit 1
+fi
 echo "✅ CCMINER BUILD SUCCESS"
