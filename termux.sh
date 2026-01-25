@@ -26,7 +26,9 @@ cd $HOME
 cp /data/data/com.termux/files/usr/include/linux/sysctl.h /data/data/com.termux/files/usr/include/sys
 git clone https://github.com/Darktron/ccminer.git
 cd ccminer
+dos2unix build.sh configure.sh autogen.sh start.sh
 chmod +x build.sh configure.sh autogen.sh start.sh
+
 CXX=clang++ CC=clang ./build.sh
 
 echo "=== BUILD RESULT ==="
