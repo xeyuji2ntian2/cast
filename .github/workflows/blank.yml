@@ -1,4 +1,4 @@
-name: Termux CI (Android Emulator)
+name: Termux CI - Build CCMINER (Android Emulator)
 
 on:
   push:
@@ -17,19 +17,14 @@ jobs:
         uses: actions/checkout@v4
 
       # ===============================
-      # Download Termux DEBUG APK (REAL)
+      # Download Termux DEBUG APK
       # ===============================
-      - name: Download Termux DEBUG APK (v0.119.0-beta.2 x86_64)
+      - name: Download Termux DEBUG APK
         run: |
           set -e
           URL="https://github.com/termux/termux-app/releases/download/v0.119.0-beta.2/termux-app_v0.119.0-beta.2+apt-android-7-github-debug_x86_64.apk"
-
-          echo "⬇️ Downloading Termux DEBUG APK..."
           curl -fL --retry 5 --retry-delay 5 -o termux.apk "$URL"
-
-          echo "🔍 Verifying APK..."
-          file termux.apk
-          file termux.apk | grep -q "Android package" || exit 1
+          file termux.apk | grep -q "Android package"
 
       # ===============================
       # Android Emulator (Docker)
@@ -46,44 +41,32 @@ jobs:
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
             halimqarroum/docker-android:api-30
 
-      - name: Wait Emulator FULLY READY
+      - name: Wait Emulator READY
         run: |
           docker exec android bash -c '
             adb start-server
-
-            echo "⏳ waiting emulator online..."
-            until adb devices | grep "emulator-5554[[:space:]]*device"; do sleep 5; done
-
-            echo "⏳ waiting boot completed..."
+            until adb devices | grep "emulator-5554.*device"; do sleep 5; done
             until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
-
-            echo "⏳ waiting package manager..."
             until adb shell pm list packages >/dev/null 2>&1; do sleep 5; done
-
             echo "✅ Emulator READY"
           '
 
       # ===============================
       # Install Termux
       # ===============================
-      - name: Push Termux APK
-        run: docker cp termux.apk android:/tmp/termux.apk
-
-      - name: Install Termux (NO STREAMING)
+      - name: Install Termux
         run: |
+          docker cp termux.apk android:/tmp/termux.apk
           docker exec android adb install --no-streaming -r /tmp/termux.apk
-
-      - name: Launch Termux once (init filesystem)
-        run: |
           docker exec android adb shell '
             monkey -p com.termux -c android.intent.category.LAUNCHER 1
             sleep 25
           '
 
       # ===============================
-      # Create Termux Script (HARDENED)
+      # Termux Build Script
       # ===============================
-      - name: Create Termux script
+      - name: Create Termux build script
         run: |
           cat <<'EOF' > termux.sh
           #!/data/data/com.termux/files/usr/bin/bash
@@ -96,41 +79,71 @@ jobs:
           echo "=== TERMUX ENV ==="
           whoami
           id
-          echo "PREFIX=$PREFIX"
-          echo "PATH=$PATH"
-          echo "================="
+          uname -a
 
-          # ===== HARDENING =====
           if [ "$(id -u)" = "0" ]; then
-            echo "❌ ERROR: Termux must NOT run as root"
+            echo "❌ ERROR: running as root"
             exit 1
           fi
 
-          if ! command -v pkg >/dev/null; then
-            echo "❌ ERROR: pkg not found (not Termux env)"
-            exit 1
-          fi
+          # ===============================
+          # Update & deps
+          # ===============================
+          yes | pkg update
+          yes | pkg upgrade -y
 
-          # ===== TERMUX OPS =====
-          yes | pkg update && pkg upgrade -y
-          yes | pkg install libjansson build-essential clang binutils git -y
-          #cp /data/data/com.termux/files/usr/include/linux/sysctl.h /data/data/com.termux/files/usr/include/sys
-          #git clone https://github.com/Darktron/ccminer.git
-          #cd ccminer
-          #chmod +x build.sh configure.sh autogen.sh start.sh
-          #CXX=clang++ CC=clang ./build.sh
+          yes | pkg install \
+            git \
+            clang \
+            make \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            openssl \
+            openssl-dev \
+            libcurl \
+            libcurl-dev \
+            zlib \
+            zlib-dev \
+            -y
 
-          echo "✅ Termux setup finished successfully"
+          # ===============================
+          # Build CCMINER (CPU ONLY)
+          # ===============================
+          cd $HOME
+          git clone https://github.com/Oink70/ccminer.git
+          cd ccminer
+
+          export CC=clang
+          export CXX=clang++
+          export CFLAGS="-O2"
+          export LDFLAGS=""
+
+          ./autogen.sh
+
+          ./configure \
+            --disable-cuda \
+            --disable-opencl \
+            --with-crypto \
+            --prefix=$PREFIX
+
+          make -j$(nproc)
+
+          echo "=== BUILD RESULT ==="
+          file ccminer
+          ./ccminer --help || true
+
+          echo "✅ CCMINER BUILD SUCCESS"
           EOF
 
-          docker cp termux.sh android:/tmp/termux.sh
-          docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
+          docker cp termux.sh android:/data/local/tmp/termux.sh
           docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
 
       # ===============================
-      # Run Termux Script (NON-ROOT, DEBUG APK)
+      # Run Termux Script
       # ===============================
-      - name: Run Termux commands (FINAL)
+      - name: Run Termux build
         run: |
           docker exec android adb shell '
             run-as com.termux \
