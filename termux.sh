@@ -10,3 +10,4 @@ echo "=== TERMUX ENV ==="
 whoami
 id
 uname -a
+lscpu
