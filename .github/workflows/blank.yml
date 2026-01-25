@@ -31,23 +31,18 @@ jobs:
 
       - name: Wait emulator boot
         run: |
-          adb connect localhost:5555
-          adb wait-for-device
-          adb shell 'until getprop sys.boot_completed | grep -m 1 1; do sleep 5; done'
-
-      - name: Download Termux APK (universal)
-        run: |
-          curl -L -o termux.apk \
-          https://github.com/termux/termux-app/releases/latest/download/termux-app_v0.118.0+github-debug_universal.apk
+          adb connect localhost:5555 || true
+          adb -s emulator-5554 wait-for-device
+          adb -s emulator-5554 shell 'until getprop sys.boot_completed | grep -m 1 1; do sleep 5; done'
 
       - name: Install & open Termux
         run: |
-          adb install -r termux.apk
-          adb shell monkey -p com.termux 1
+          adb -s emulator-5554 install -r termux.apk
+          adb -s emulator-5554 shell monkey -p com.termux 1
           sleep 15
 
       - name: Run Termux commands
         run: |
-          adb shell "pkg update -y"
-          adb shell "pkg upgrade -y"
-          adb shell "pkg install -y libjansson build-essential clang binutils git"
+          adb -s emulator-5554 shell "pkg update -y"
+          adb -s emulator-5554 shell "pkg upgrade -y"
+          adb -s emulator-5554 shell "pkg install -y libjansson build-essential clang binutils git"
