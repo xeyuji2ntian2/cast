@@ -88,10 +88,10 @@ jobs:
       # ===============================
       # Run Termux Commands (ROOT MODE)
       # ===============================
-      - name: Run Termux package commands
+      - name: Run Termux package commands (ROOT – FIXED)
         run: |
           docker exec android bash -c '
-            adb shell su -c "
+            adb shell su 0 sh -c "
               export HOME=/data/data/com.termux/files/home
               export PREFIX=/data/data/com.termux/files/usr
               export PATH=\$PREFIX/bin:\$PATH
