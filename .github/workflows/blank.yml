@@ -10,38 +10,47 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Enable KVM & adb
+      - name: Install KVM & ADB
         run: |
           sudo apt update -qq
           sudo apt install -y qemu-kvm android-tools-adb
           sudo chmod 666 /dev/kvm
 
-      - name: Start Android Emulator
+      - name: Start Android Emulator (Docker)
         run: |
           docker pull halimqarroum/docker-android:api-30
           docker run -d \
             --name android \
             --privileged \
-            -p 5555:5555 \
             -e DEVICE=pixel \
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
             halimqarroum/docker-android:api-30
 
-      - name: Wait emulator boot
+      - name: Wait for emulator to boot
         run: |
-          adb connect localhost:5555 || true
+          adb start-server
           adb -s emulator-5554 wait-for-device
           adb -s emulator-5554 shell 'until getprop sys.boot_completed | grep -m 1 1; do sleep 5; done'
 
-      - name: Install & open Termux
+      - name: Debug devices (sanity check)
+        run: |
+          adb devices -l
+
+      - name: Download Termux APK (universal)
+        run: |
+          curl -L -o termux.apk \
+          https://github.com/termux/termux-app/releases/latest/download/termux-app_v0.118.0+github-debug_universal.apk
+
+      - name: Install & launch Termux
         run: |
           adb -s emulator-5554 install -r termux.apk
           adb -s emulator-5554 shell monkey -p com.termux 1
           sleep 15
 
-      - name: Run Termux commands
+      - name: Run Termux package commands
         run: |
           adb -s emulator-5554 shell "pkg update -y"
           adb -s emulator-5554 shell "pkg upgrade -y"
