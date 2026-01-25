@@ -89,20 +89,28 @@ jobs:
           echo "=== Update & upgrade ==="
           yes | pkg update && pkg upgrade -y
 
-          echo "=== pkg install ==="
+          
 
-          yes | pkg install \
-            git \
-            clang \
-            make \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            openssl \
-            libcurl \
-            zlib \
-            -y
+          echo "=== install git ==="  
+          yes | pkg install git -y
+          echo "=== install clang ==="  
+          yes | pkg install clang -y
+          echo "=== install make ==="  
+          yes | pkg install make -y
+          echo "=== install autoconf ==="  
+          yes | pkg install autoconf -y 
+          echo "=== install automake ==="  
+          yes | pkg install automake -y
+          echo "=== install libtool ==="  
+          yes | pkg install libtool -y
+          echo "=== install pkg-config==="  
+          yes | pkg install pkg-config -y
+          echo "=== install openssl ==="  
+          yes | pkg install openssl -y
+          echo "=== install libcurl ==="  
+          yes | pkg install libcurl -y
+          echo "=== install zlib ==="  
+          yes | pkg install zlib -y
 
           echo "=== Build CCMINER (CPU ONLY) ==="
           
