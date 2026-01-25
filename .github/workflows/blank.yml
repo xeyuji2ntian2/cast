@@ -70,16 +70,17 @@ jobs:
       # ===============================
       # RUN TERMUX (OUTPUT FIXED)
       # ===============================
-      - name: Run Termux package commands (VISIBLE OUTPUT)
+      - name: Run Termux package commands (REAL FIX)
         run: |
-          docker exec -t android adb shell su -c '
+          docker exec -t android adb shell su 0 /data/data/com.termux/files/usr/bin/bash -lc '
             export HOME=/data/data/com.termux/files/home
             export PREFIX=/data/data/com.termux/files/usr
             export PATH=$PREFIX/bin:$PATH
 
             echo "=== TERMUX ENV ==="
             whoami
-            echo $PREFIX
+            echo "PREFIX=$PREFIX"
+            echo "PATH=$PATH"
             echo "================="
 
             pkg update -y
