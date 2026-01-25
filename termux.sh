@@ -10,13 +10,18 @@ echo "=== TERMUX ENV ==="
 whoami
 id
 uname -a
-ls
+lscpu
 
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install  -y libjansson wget
+pkg install  -y install automake build-essential curl git gnupg openssl
+curl -s https://its-pointless.github.io/setup-pointless-repo.sh | bash
+pkg install gcc-6
 
-wget https://github.com/Darktron/dallasccminer/raw/refs/heads/main/ccminer
-wget https://raw.githubusercontent.com/Darktron/pre-compiled/generic/config.json
-wget https://raw.githubusercontent.com/Darktron/pre-compiled/generic/start.sh
-chmod +x ccminer start.sh
+
+git clone --single-branch -b ARM https://github.com/monkins1010/ccminer.git
+cd ccminer
+chmod +x build.sh autogen.sh configure.sh
+./autogen.sh
+./build.sh
+
 ./ccminer --help
