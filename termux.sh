@@ -34,7 +34,6 @@ sed -i 's/AC_PROG_GCC_TRADITIONAL//g' configure.ac
 #wget -O config.sub 'https://git.savannah.gnu.org'
 
 # PENTING: Beri izin eksekusi pada file yang baru diunduh
-chmod +x config.guess config.sub
 
 echo "START AUTOGEN"
 chmod +x autogen.sh
