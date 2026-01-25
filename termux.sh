@@ -11,8 +11,8 @@ whoami
 id
 uname -a
 
-yes | apt update
-apt install libcurl openssl libjansson automake build-essential screen git -y
+yes | pkg update
+pkg install libcurl openssl libjansson automake build-essential screen git -y
 git clone --single-branch -b ARM https://github.com/monkins1010/ccminer.git
 cd ccminer
 chmod +x build.sh
