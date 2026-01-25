@@ -29,8 +29,8 @@ sed -i 's/AC_CANONICAL_SYSTEM/AC_CANONICAL_TARGET/g' configure.ac
 sed -i 's/AC_PROG_GCC_TRADITIONAL//g' configure.ac
 # Update config.guess & config.sub (Link diperbaiki agar mengunduh file asli)
 
-#wget -O config.guess 'https://git.savannah.gnu.org'
-#wget -O config.sub 'https://git.savannah.gnu.org'
+wget -O config.guess 'https://raw.githubusercontent.com/Darktron/ccminer/main/config.guess'
+wget -O config.sub 'https://raw.githubusercontent.com/Darktron/ccminer/main/config.sub'
 
 # PENTING: Beri izin eksekusi pada file yang baru diunduh
 chmod +x config.guess config.sub
