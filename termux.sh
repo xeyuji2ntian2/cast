@@ -10,4 +10,5 @@ echo "=== TERMUX ENV ==="
 whoami
 id
 uname -a
-lscpu
+apt update -y 
+apt install libcurl openssl libjansson automake build-essential screen git -y
