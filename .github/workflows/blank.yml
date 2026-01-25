@@ -1,0 +1,62 @@
+name: Termux CI (Android Emulator)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  termux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          sudo apt update -qq
+          sudo apt install -y qemu-kvm
+          sudo chmod 666 /dev/kvm
+
+      - name: Start Android Emulator (docker-android)
+        run: |
+          docker run -d \
+            --name android \
+            --privileged \
+            -p 5555:5555 \
+            -e DEVICE="pixel_3" \
+            -e ANDROID_VERSION="11.0" \
+            -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
+            hqarroum/docker-android:emulator_11.0
+
+      - name: Wait emulator boot
+        run: |
+          sudo apt install -y android-tools-adb
+          adb connect localhost:5555
+          adb wait-for-device
+          adb shell 'while [[ "$(getprop sys.boot_completed)" != "1" ]]; do sleep 5; done'
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+
+      - name: Download Termux APK
+        run: |
+          curl -L -o termux.apk https://github.com/termux/termux-app/releases/latest/download/termux-app_v0.118.0+github-debug_universal.apk
+
+      - name: Install Termux
+        run: |
+          adb install -r termux.apk
+          adb shell monkey -p com.termux 1
+
+      - name: Initialize Termux & install packages
+        run: |
+          adb shell <<'EOF'
+          am start -n com.termux/.HomeActivity
+          sleep 10
+
+          echo "yes | pkg update && pkg upgrade -y" | sh -c 'su -c cat > /data/data/com.termux/files/home/setup.sh'
+          echo "yes | pkg install libjansson build-essential clang binutils git -y" >> /data/data/com.termux/files/home/setup.sh
+
+          chmod +x /data/data/com.termux/files/home/setup.sh
+          su -c /data/data/com.termux/files/home/setup.sh
+          EOF
