@@ -17,7 +17,7 @@ fi
 
 echo -e "\n\n\n\n\e[32m======================== Update & upgrade ========================\e[0m\n\n\n\n"
 
-pkg update && pkg upgrade -y
+pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 
 
 
