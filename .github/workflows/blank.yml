@@ -25,7 +25,16 @@ jobs:
           URL="https://github.com/termux/termux-app/releases/download/v0.119.0-beta.2/termux-app_v0.119.0-beta.2+apt-android-7-github-debug_x86_64.apk"
           curl -fL --retry 5 --retry-delay 5 -o termux.apk "$URL"
           file termux.apk | grep -q "Android package"
-
+      - name: Build CCMINER on Ubuntu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libjansson-dev libcurl4-openssl-dev libssl-dev automake autoconf
+          git clone https://github.com
+          cd ccminer
+          chmod +x build.sh configure.sh autogen.sh
+          ./build.sh
+          # File biner biasanya bernama 'ccminer'
+          ls
       # ===============================
       # Android Emulator (Docker)
       # ===============================
@@ -72,6 +81,8 @@ jobs:
           docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
           docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
 
+          docker cp ccminer/ccminer android:/tmp/ccminer
+          docker exec android adb push /tmp/ccminer /data/local/tmp/ccmmminer
       # ===============================
       # Run Termux Script
       # ===============================
@@ -79,7 +90,7 @@ jobs:
         run: |
           # 1. Pindahkan script ke internal storage Termux agar bisa dieksekusi (menghindari noexec)
           docker exec android adb shell "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
-          
+          docker exec android adb shell "run-as com.termux cp /data/local/tmp/ccminer /data/data/com.termux/files/home/ccminer"
           # 2. Beri izin eksekusi di dalam home directory
           docker exec android adb shell "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
           
