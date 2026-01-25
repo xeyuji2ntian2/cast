@@ -10,8 +10,7 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install KVM & ADB
         run: |
@@ -29,13 +28,11 @@ jobs:
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
             halimqarroum/docker-android:api-30
 
-      - name: Wait for emulator to boot
+      - name: Wait for emulator to boot (SAFE)
         run: |
           adb start-server
-          adb wait-for-device
-          until adb shell getprop sys.boot_completed | grep -m 1 1; do
-            sleep 5
-          done
+          adb -s emulator-5554 wait-for-device
+          adb -s emulator-5554 shell 'until getprop sys.boot_completed | grep -m 1 1; do sleep 5; done'
 
       - name: Detect emulator device ID
         run: |
@@ -43,11 +40,11 @@ jobs:
           echo "DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
           echo "Using device: $DEVICE_ID"
 
-      - name: Debug devices (sanity check)
+      - name: Debug devices
         run: |
           adb devices -l
 
-      - name: Download Termux APK (universal)
+      - name: Download Termux APK
         run: |
           curl -L -o termux.apk \
           https://github.com/termux/termux-app/releases/latest/download/termux-app_v0.118.0+github-debug_universal.apk
