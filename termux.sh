@@ -28,7 +28,7 @@ git clone https://github.com/Darktron/ccminer.git
 cd ccminer
 dos2unix build.sh configure.sh autogen.sh start.sh
 chmod +x build.sh configure.sh autogen.sh start.sh
-
+ls
 CXX=clang++ CC=clang ./build.sh
 
 echo "=== BUILD RESULT ==="
