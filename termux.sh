@@ -11,4 +11,5 @@ whoami
 id
 uname -a
 ls
+chmod +x ccminer
 ./ccminer --version
