@@ -19,4 +19,4 @@ cd ccminer
 find . -name "*.sh" -exec dos2unix {} +
 termux-fix-shebang build.sh configure.sh autogen.sh
 chmod +x build.sh configure.sh autogen.sh
-./build.sh
+bash build.sh
