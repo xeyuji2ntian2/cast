@@ -88,18 +88,18 @@ jobs:
       # ===============================
       # Run Termux Commands (ROOT MODE)
       # ===============================
-      - name: Run Termux package commands (ROOT – FIXED)
+      - name: Run Termux package commands (ROOT – FIXED PROPERLY)
         run: |
-          docker exec android bash -c '
-            adb shell su 0 sh -c "
-              export HOME=/data/data/com.termux/files/home
-              export PREFIX=/data/data/com.termux/files/usr
-              export PATH=\$PREFIX/bin:\$PATH
+          docker exec android bash <<'EOF'
+          adb shell su 0 sh <<'EOS'
+          export HOME=/data/data/com.termux/files/home
+          export PREFIX=/data/data/com.termux/files/usr
+          export PATH=$PREFIX/bin:$PATH
 
-              \$PREFIX/bin/bash -lc \"
-                pkg update -y
-                pkg upgrade -y
-                pkg install -y libjansson build-essential clang binutils git
-              \"
-            "
-          '
+          exec $PREFIX/bin/bash -lc "
+            pkg update -y
+            pkg upgrade -y
+            pkg install -y libjansson build-essential clang binutils git
+          "
+          EOS
+          EOF
