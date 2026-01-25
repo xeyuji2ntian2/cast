@@ -16,27 +16,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Download & verify Termux DEBUG APK
+      # ===============================
+      # Download Termux DEBUG APK (REAL)
+      # ===============================
+      - name: Download Termux DEBUG APK (v0.119.0-beta.2 x86_64)
         run: |
           set -e
-
-          URL="https://github.com/termux/termux-app/releases/download/v0.118.0/termux-app_v0.118.0+debug_universal.apk"
+          URL="https://github.com/termux/termux-app/releases/download/v0.119.0-beta.2/termux-app_v0.119.0-beta.2+apt-android-7-github-debug_x86_64.apk"
 
           echo "⬇️ Downloading Termux DEBUG APK..."
-          curl -fL --retry 5 --retry-delay 5 \
-            -o termux.apk "$URL"
+          curl -fL --retry 5 --retry-delay 5 -o termux.apk "$URL"
 
           echo "🔍 Verifying APK..."
           file termux.apk
-
-          if ! file termux.apk | grep -q "Android package"; then
-            echo "❌ ERROR: termux.apk is NOT a valid APK"
-            echo "---- FILE DUMP ----"
-            head -n 20 termux.apk || true
-            exit 1
-          fi
-
-          echo "✅ APK verified"
+          file termux.apk | grep -q "Android package" || exit 1
 
       # ===============================
       # Android Emulator (Docker)
@@ -131,7 +124,7 @@ jobs:
           docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
 
       # ===============================
-      # Run Termux Script (NON-ROOT)
+      # Run Termux Script (NON-ROOT, DEBUG APK)
       # ===============================
       - name: Run Termux commands (FINAL)
         run: |
