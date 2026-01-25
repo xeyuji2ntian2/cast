@@ -19,7 +19,8 @@ pkg install -y automake build-essential curl git gnupg openssl wget libjansson z
 
 # Clone Repo (Hapus folder lama jika ada agar tidak bentrok)
 rm -rf ccminer
-git clone  --single-branch -b Verus2.2 https://github.com/Mr-Bossman/ccminer.git
+lscpu
+git clone  --single-branch -b CLANG_android https://github.com/Mr-Bossman/ccminer.git
 cd ccminer
 
 # Fix Obsolete Macros
@@ -41,15 +42,13 @@ chmod +x autogen.sh
 
 # 3. Jalankan Configure dengan Bash eksplisit jika perlu
 echo "START CONFIGURE"
-bash ./configure \
-  --build=x86_64-unknown-linux-android \
-  --host=x86_64-unknown-linux-android \
-  CC=clang CXX=clang++ \
-  CFLAGS="-O3 -fPIE" CXXFLAGS="-O3 -fPIE" LDFLAGS="-pie"
+#bash ./configure --build=x86_64-unknown-linux-android --host=x86_64-unknown-linux-android CC=clang CXX=clang++ CFLAGS="-O3 -fPIE" CXXFLAGS="-O3 -fPIE" LDFLAGS="-pie"
+./configure.sh
 
 # Compile dengan semua core tersedia
 echo "START MAKE"
-make -j$(nproc)
+make
+#make -j$(nproc)
 
 # Test run
 ./ccminer --help
