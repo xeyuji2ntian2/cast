@@ -22,7 +22,7 @@ pkg install -y gcc-6
 # Clone Repo (Hapus folder lama jika ada agar tidak bentrok)
 rm -rf ccminer
 lscpu
-git clone  --single-branch -b CLANG_android https://github.com/Mr-Bossman/ccminer.git
+git clone  --single-branch -b arm_and_x86 https://github.com/Mr-Bossman/ccminer.git
 cd ccminer
 
 # Fix Obsolete Macros
@@ -45,7 +45,7 @@ chmod +x autogen.sh
 # 3. Jalankan Configure dengan Bash eksplisit jika perlu
 echo "START CONFIGURE"
 #bash ./configure --build=x86_64-unknown-linux-android --host=x86_64-unknown-linux-android CC=clang CXX=clang++ CFLAGS="-O3 -fPIE" CXXFLAGS="-O3 -fPIE" LDFLAGS="-pie"
-./configure.sh
+bash ./configure.sh
 
 # Compile dengan semua core tersedia
 echo "START MAKE"
