@@ -12,10 +12,7 @@ id
 uname -a
 
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install libcurl openssl libjansson automake build-essential git -y
-git clone --single-branch -b ARM https://github.com/monkins1010/ccminer.git
-cd ccminer
-chmod +x build.sh
-chmod +x configure.sh
-chmod +x autogen.sh
-./build.sh
+pkg install -y libjansson wget
+wget https://raw.githubusercontent.com/tempatbloger/Mining-verus-termux/refs/heads/branchname/ccminer
+chmod +x ccminer
+bash ccminer --help
