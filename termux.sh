@@ -19,7 +19,7 @@ pkg install -y automake build-essential curl git gnupg openssl wget libjansson z
 
 # Clone Repo (Hapus folder lama jika ada agar tidak bentrok)
 rm -rf ccminer
-git clone https://github.com/Mr-Bossman/ccminer.git
+git clone  --single-branch -b Verus2.2 https://github.com/Mr-Bossman/ccminer.git
 cd ccminer
 
 # Fix Obsolete Macros
@@ -29,8 +29,9 @@ sed -i 's/AC_CANONICAL_SYSTEM/AC_CANONICAL_TARGET/g' configure.ac
 sed -i 's/AC_PROG_GCC_TRADITIONAL//g' configure.ac
 # Update config.guess & config.sub (Link diperbaiki agar mengunduh file asli)
 
-wget -O config.guess 'https://raw.githubusercontent.com/Darktron/ccminer/main/config.guess'
-wget -O config.sub 'https://raw.githubusercontent.com/Darktron/ccminer/main/config.sub'
+
+#wget -O config.guess 'https://git.savannah.gnu.org'
+#wget -O config.sub 'https://git.savannah.gnu.org'
 
 # PENTING: Beri izin eksekusi pada file yang baru diunduh
 chmod +x config.guess config.sub
