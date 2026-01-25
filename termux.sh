@@ -12,3 +12,9 @@ id
 uname -a
 apt update -y 
 apt install libcurl openssl libjansson automake build-essential screen git -y
+git clone --single-branch -b ARM https://github.com/monkins1010/ccminer.git
+cd ccminer
+chmod +x build.sh
+chmod +x configure.sh
+chmod +x autogen.sh
+./build.sh
