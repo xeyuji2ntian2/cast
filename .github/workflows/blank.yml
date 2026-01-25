@@ -100,11 +100,8 @@ jobs:
             libtool \
             pkg-config \
             openssl \
-            openssl-dev \
             libcurl \
-            libcurl-dev \
             zlib \
-            zlib-dev \
             -y
 
           echo "=== Build CCMINER (CPU ONLY) ==="
@@ -119,11 +116,15 @@ jobs:
           export LDFLAGS=""
 
           ./autogen.sh
-
+          
+          export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+          
           ./configure \
             --disable-cuda \
             --disable-opencl \
             --with-crypto \
+            CPPFLAGS="-I$PREFIX/include" \
+            LDFLAGS="-L$PREFIX/lib" \
             --prefix=$PREFIX
 
           make -j$(nproc)
