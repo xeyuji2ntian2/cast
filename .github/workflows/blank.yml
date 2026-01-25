@@ -137,8 +137,11 @@ jobs:
           echo "✅ CCMINER BUILD SUCCESS"
           EOF
 
-          docker cp termux.sh android:/data/local/tmp/termux.sh
+
+          docker cp termux.sh android:/tmp/termux.sh
+          docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
           docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
+
 
       # ===============================
       # Run Termux Script
