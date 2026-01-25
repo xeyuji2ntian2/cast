@@ -22,7 +22,7 @@ pkg install -y gcc-6
 # Clone Repo (Hapus folder lama jika ada agar tidak bentrok)
 rm -rf ccminer
 lscpu
-git clone  --single-branch -b arm_and_x86 https://github.com/Mr-Bossman/ccminer.git
+git clone  --single-branch -b cpuhashrate https://github.com/Mr-Bossman/ccminer.git
 cd ccminer
 
 # Fix Obsolete Macros
