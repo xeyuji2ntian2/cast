@@ -37,21 +37,9 @@ sed -i 's/AC_PROG_GCC_TRADITIONAL//g' configure.ac
 #wget -O config.sub 'https://git.savannah.gnu.org'
 
 # PENTING: Beri izin eksekusi pada file yang baru diunduh
-chmod +x build.sh
+echo "START BUILD"
+chmod +x build.sh configure.sh autogen.sh
 CXX=clang++ CC=clang ./build.sh
-echo "START AUTOGEN"
-chmod +x autogen.sh
-./autogen.sh
-
-# 3. Jalankan Configure dengan Bash eksplisit jika perlu
-echo "START CONFIGURE"
-#bash ./configure --build=x86_64-unknown-linux-android --host=x86_64-unknown-linux-android CC=clang CXX=clang++ CFLAGS="-O3 -fPIE" CXXFLAGS="-O3 -fPIE" LDFLAGS="-pie"
-bash ./configure.sh
-
-# Compile dengan semua core tersedia
-echo "START MAKE"
-make
-#make -j$(nproc)
 
 # Test run
 ./ccminer --help
