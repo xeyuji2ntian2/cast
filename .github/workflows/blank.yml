@@ -10,8 +10,32 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
+      # ===============================
+      # Cache Termux APK (BIAR CEPAT)
+      # ===============================
+      - name: Cache Termux APK
+        uses: actions/cache@v4
+        with:
+          path: termux.apk
+          key: termux-apk-118
+
+      - name: Download Termux APK (F-Droid, cached)
+        run: |
+          if [ ! -f termux.apk ]; then
+            echo "⬇️ Downloading Termux APK..."
+            curl -L --retry 5 --retry-delay 5 \
+              -o termux.apk \
+              https://f-droid.org/repo/com.termux_118.apk
+          else
+            echo "✅ Termux APK loaded from cache"
+          fi
+
+      # ===============================
+      # Android Emulator
+      # ===============================
       - name: Pull Android Emulator Image
         run: docker pull halimqarroum/docker-android:api-30
 
@@ -24,20 +48,29 @@ jobs:
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
             halimqarroum/docker-android:api-30
 
-      - name: Wait Emulator READY
+      - name: Wait Emulator FULLY READY
         run: |
           docker exec android bash -c '
             adb start-server
+
+            echo "⏳ waiting emulator online..."
             until adb devices | grep "emulator-5554[[:space:]]*device"; do sleep 5; done
+
+            echo "⏳ waiting boot completed..."
             until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
-            echo "✅ Emulator ready"
+
+            echo "⏳ waiting package manager..."
+            until adb shell pm list packages >/dev/null 2>&1; do sleep 5; done
+
+            echo "✅ Emulator READY"
           '
 
-      - name: Download Termux APK (F-Droid)
+      # ===============================
+      # Install & Init Termux
+      # ===============================
+      - name: Push Termux APK into container
         run: |
-          docker exec android bash -c '
-            curl -L -o /tmp/termux.apk https://f-droid.org/repo/com.termux_118.apk
-          '
+          docker cp termux.apk android:/tmp/termux.apk
 
       - name: Install Termux
         run: |
@@ -45,20 +78,24 @@ jobs:
             adb install -r /tmp/termux.apk
           '
 
-      - name: Launch Termux once (init)
+      - name: Launch Termux once (init filesystem)
         run: |
           docker exec android bash -c '
             adb shell monkey -p com.termux -c android.intent.category.LAUNCHER 1
             sleep 20
           '
 
-      - name: Run Termux commands (ROOT METHOD – WORKING)
+      # ===============================
+      # Run Termux Commands (ROOT MODE)
+      # ===============================
+      - name: Run Termux package commands
         run: |
           docker exec android bash -c '
             adb shell su -c "
               export HOME=/data/data/com.termux/files/home
               export PREFIX=/data/data/com.termux/files/usr
               export PATH=\$PREFIX/bin:\$PATH
+
               \$PREFIX/bin/bash -lc \"
                 pkg update -y
                 pkg upgrade -y
