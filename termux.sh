@@ -11,4 +11,4 @@ whoami
 id
 uname -a
 ls
-ccminer --version
+./ccminer --version
