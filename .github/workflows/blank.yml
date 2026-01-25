@@ -10,12 +10,10 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Pull Android Emulator Image
-        run: |
-          docker pull halimqarroum/docker-android:api-30
+        run: docker pull halimqarroum/docker-android:api-30
 
       - name: Start Android Emulator
         run: |
@@ -26,36 +24,23 @@ jobs:
             -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
             halimqarroum/docker-android:api-30
 
-      - name: Show Docker Status (debug)
-        run: |
-          docker ps
-          docker logs android --tail 50
-
-      - name: Wait for Emulator FULLY READY
+      - name: Wait Emulator FULLY READY
         run: |
           docker exec android bash -c '
             adb start-server
 
-            echo "⏳ waiting emulator appear..."
             until adb devices | grep emulator; do sleep 5; done
-
-            echo "⏳ waiting emulator ONLINE..."
             until adb devices | grep "emulator-5554[[:space:]]*device"; do sleep 5; done
-
-            echo "⏳ waiting boot_completed..."
             until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
-
-            echo "⏳ waiting package manager..."
             until adb shell pm list packages >/dev/null 2>&1; do sleep 5; done
 
             echo "✅ EMULATOR READY"
           '
 
-      - name: Download Termux APK (F-Droid single APK)
+      - name: Download Termux APK (F-Droid)
         run: |
           docker exec android bash -c '
-            curl -L -o /tmp/termux.apk \
-            https://f-droid.org/repo/com.termux_118.apk
+            curl -L -o /tmp/termux.apk https://f-droid.org/repo/com.termux_118.apk
           '
 
       - name: Install Termux
@@ -64,17 +49,20 @@ jobs:
             adb install -r /tmp/termux.apk
           '
 
-      - name: Launch Termux
+      - name: Launch Termux once (init)
         run: |
           docker exec android bash -c '
             adb shell monkey -p com.termux -c android.intent.category.LAUNCHER 1
-            sleep 15
+            sleep 20
           '
 
-      - name: Run Termux package commands
+      - name: Run Termux commands (CORRECT WAY)
         run: |
           docker exec android bash -c '
-            pkg update -y
-            pkg upgrade -y
-            pkg install -y libjansson build-essential clang binutils git
+            adb shell run-as com.termux bash -lc "
+              termux-change-repo
+              pkg update -y
+              pkg upgrade -y
+              pkg install -y libjansson build-essential clang binutils git
+            "
           '
