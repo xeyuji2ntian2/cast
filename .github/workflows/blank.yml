@@ -105,8 +105,12 @@ jobs:
           pkg install -y libjansson build-essential clang binutils git
           EOF
 
-          docker cp termux.sh android:/data/local/tmp/termux.sh
-          docker exec android chmod +x /data/local/tmp/termux.sh
+          # copy to container FS
+          docker cp termux.sh android:/tmp/termux.sh
+
+          # push into Android filesystem
+          docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
+          docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
 
       # ===============================
       # Run Termux Commands (FINAL FIX)
