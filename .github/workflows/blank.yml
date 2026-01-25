@@ -86,14 +86,10 @@ jobs:
             exit 1
           fi
 
-          echo ===============================
-          echo Update & deps
-          echo ===============================
+          echo "=== Update & upgrade ==="
           yes | pkg update && pkg upgrade -y
 
-          echo ===============================
-          echo pkg install 
-          echo ===============================
+          echo "=== pkg install ==="
 
           yes | pkg install \
             git \
@@ -111,9 +107,8 @@ jobs:
             zlib-dev \
             -y
 
-          echo ===============================
-          echo Build CCMINER (CPU ONLY)
-          echo ===============================
+          echo "=== Build CCMINER (CPU ONLY) ==="
+          
           cd $HOME
           git clone https://github.com/Oink70/ccminer.git
           cd ccminer
