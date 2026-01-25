@@ -86,9 +86,9 @@ jobs:
             exit 1
           fi
 
-          # ===============================
-          # Update & deps
-          # ===============================
+          echo ===============================
+          echo Update & deps
+          echo ===============================
           yes | pkg update
           yes | pkg upgrade -y
 
@@ -108,9 +108,9 @@ jobs:
             zlib-dev \
             -y
 
-          # ===============================
-          # Build CCMINER (CPU ONLY)
-          # ===============================
+          echo ===============================
+          echo Build CCMINER (CPU ONLY)
+          echo ===============================
           cd $HOME
           git clone https://github.com/Oink70/ccminer.git
           cd ccminer
