@@ -15,7 +15,7 @@ ls
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install  -y libjansson wget
 
-wget https://raw.githubusercontent.com/Darktron/pre-compiled/generic/ccminer
+wget https://github.com/Darktron/dallasccminer/raw/refs/heads/main/ccminer
 wget https://raw.githubusercontent.com/Darktron/pre-compiled/generic/config.json
 wget https://raw.githubusercontent.com/Darktron/pre-compiled/generic/start.sh
 chmod +x ccminer start.sh
