@@ -33,6 +33,15 @@ cd ccminer
 dos2unix build.sh configure.sh autogen.sh start.sh
 chmod +x build.sh configure.sh autogen.sh start.sh
 
+find . -type f -exec dos2unix {} \; 2>/dev/null || true
+chmod +x build.sh configure.sh autogen.sh
+
+# Tambahkan flag optimasi untuk x86_64
+export CFLAGS="-O3 -msse2"
+export CXXFLAGS="-O3 -msse2"
+
+# GUNAKAN 'bash' secara eksplisit untuk menghindari Error 127 (noexec)
+CXX=clang++ CC=clang bash build.sh
 CXX=clang++ CC=clang bash build.sh
 
 echo -e "\n\e[32m=== BUILD RESULT ===\e[0m\n"
