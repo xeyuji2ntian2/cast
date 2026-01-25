@@ -10,25 +10,28 @@ jobs:
     timeout-minutes: 60
 
     steps:
+      # ===============================
+      # Checkout
+      # ===============================
       - name: Checkout repo
         uses: actions/checkout@v4
 
       # ===============================
-      # Cache Termux APK
+      # Cache Termux DEBUG APK
       # ===============================
       - name: Cache Termux APK
         uses: actions/cache@v4
         with:
           path: termux.apk
-          key: termux-apk-118
+          key: termux-debug-apk-0.118.0
 
-      - name: Download Termux APK (F-Droid)
+      - name: Download Termux DEBUG APK
         run: |
           if [ ! -f termux.apk ]; then
-            echo "⬇️ Downloading Termux APK..."
+            echo "⬇️ Downloading Termux DEBUG APK..."
             curl -L --retry 5 --retry-delay 5 \
               -o termux.apk \
-              https://f-droid.org/repo/com.termux_118.apk
+              https://github.com/termux/termux-app/releases/download/v0.118.0/termux-app_v0.118.0+debug_universal.apk
           else
             echo "✅ Termux APK loaded from cache"
           fi
@@ -73,49 +76,62 @@ jobs:
 
       - name: Install Termux
         run: |
-          docker exec android bash -c '
-            adb install -r /tmp/termux.apk
-          '
+          docker exec android adb install -r /tmp/termux.apk
 
       - name: Launch Termux once (init filesystem)
         run: |
-          docker exec android bash -c '
-            adb shell monkey -p com.termux -c android.intent.category.LAUNCHER 1
+          docker exec android adb shell '
+            monkey -p com.termux -c android.intent.category.LAUNCHER 1
             sleep 25
           '
 
       # ===============================
-      # Create Termux Script (NO QUOTE HELL)
+      # Create Termux Script (HARDENED)
       # ===============================
-      - name: Create Termux command script
+      - name: Create Termux script
         run: |
           cat <<'EOF' > termux.sh
+          #!/data/data/com.termux/files/usr/bin/bash
+          set -euo pipefail
+
           export HOME=/data/data/com.termux/files/home
           export PREFIX=/data/data/com.termux/files/usr
           export PATH=$PREFIX/bin:$PATH
 
           echo "=== TERMUX ENV ==="
           whoami
+          id
           echo "PREFIX=$PREFIX"
           echo "PATH=$PATH"
           echo "================="
 
-          pkg update -y
-          pkg upgrade -y
-          pkg install -y libjansson build-essential clang binutils git
+          # ===== HARDENING =====
+          if [ "$(id -u)" = "0" ]; then
+            echo "❌ ERROR: Termux must NOT run as root"
+            exit 1
+          fi
+
+          if ! command -v pkg >/dev/null; then
+            echo "❌ ERROR: pkg not found (not Termux env)"
+            exit 1
+          fi
+
+          # ===== TERMUX OPS =====
+          yes | pkg update
+          yes | pkg upgrade
+          yes | pkg install libjansson build-essential clang binutils git
+
+          echo "✅ Termux setup finished successfully"
           EOF
 
-          # copy to container FS
           docker cp termux.sh android:/tmp/termux.sh
-
-          # push into Android filesystem
           docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
           docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
 
       # ===============================
-      # Run Termux Commands (FINAL FIX)
+      # Run Termux Script (NON-ROOT)
       # ===============================
-      - name: Run Termux package commands (NON-ROOT)
+      - name: Run Termux commands (FINAL)
         run: |
           docker exec android adb shell '
             run-as com.termux \
