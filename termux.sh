@@ -12,7 +12,7 @@ id
 uname -a
 
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install  -y git build-essential cmake libjansson automake autoconf openssl
+pkg install  -y dos2unix git build-essential cmake libjansson automake autoconf openssl
 dos2unix "$0" 2>/dev/null || true
 
 git clone https://github.com/monkins1010/ccminer.git
