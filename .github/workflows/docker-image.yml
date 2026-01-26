@@ -66,7 +66,7 @@ jobs:
       - name: Install Termux
         run: |
           docker cp termux.apk android:/tmp/termux.apk
-          docker exec android adb install -r /tmp/termux.apk
+          docker exec android adb install --no-streaming -r /tmp/termux.apk
 
           docker exec android adb shell '
             monkey -p com.termux -c android.intent.category.LAUNCHER 1
