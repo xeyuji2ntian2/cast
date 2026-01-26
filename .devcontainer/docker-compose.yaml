@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 300M
