@@ -48,9 +48,15 @@ jobs:
         run: |
           docker exec android bash -c '
             adb start-server
-            until adb connect 127.0.0.1:5555; do sleep 5; done
-            until adb devices | grep -w "127.0.0.1:5555.*device"; do sleep 5; done
-            until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
+            until adb devices | grep -E "emulator-[0-9]+.*device"; do
+              adb devices
+              sleep 5
+            done
+
+            until adb shell getprop sys.boot_completed | grep -m 1 1; do
+              sleep 5
+            done
+
             echo "✅ Emulator READY"
           '
 
