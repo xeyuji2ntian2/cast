@@ -48,14 +48,8 @@ jobs:
         run: |
           docker exec android bash -c '
             adb start-server
-            until adb devices | grep -E "emulator-[0-9]+.*device"; do
-              adb devices
-              sleep 5
-            done
-
-            until adb shell getprop sys.boot_completed | grep -m 1 1; do
-              sleep 5
-            done
+            until adb devices | grep -E "emulator-[0-9]+.*device"; do adb devices; sleep 5; done
+            until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
 
             echo "✅ Emulator READY"
           '
@@ -66,8 +60,7 @@ jobs:
       - name: Install Termux
         run: |
           docker cp termux.apk android:/tmp/termux.apk
-          docker exec android adb install --no-streaming -r /tmp/termux.apk
-
+          docker exec android adb install -r /tmp/termux.apk
           docker exec android adb shell '
             monkey -p com.termux -c android.intent.category.LAUNCHER 1
             sleep 30
