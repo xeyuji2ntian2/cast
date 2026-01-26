@@ -33,13 +33,13 @@ jobs:
 
       - name: Clone ccminer
         run: |
-          git clone --depth=1 https://github.com/Darktron/ccminer.git
-          cd ccminer
+          git clone --depth=1 https://github.com/Darktron/armccminer.git
+          cd armccminer
           ./autogen.sh
 
       - name: Cross compile ccminer (ARMv7)
         run: |
-          cd ccminer
+          cd armccminer
           export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
           export TARGET=armv7a-linux-androideabi
           export API=21
@@ -61,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ccminer-armv7
-          path: ccminer/ccminer
+          path: armccminer/ccminer
 
   termux:
     needs: build-ccminer
