@@ -5,7 +5,66 @@ on:
   workflow_dispatch:
 
 jobs:
+  build-ccminer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            make \
+            clang \
+            curl \
+            unzip
+
+      - name: Download Android NDK r21e
+        run: |
+          curl -L -o ndk.zip https://dl.google.com/android/repository/android-ndk-r21e-linux-x86_64.zip
+          unzip -q ndk.zip
+          echo "NDK=$PWD/android-ndk-r21e" >> $GITHUB_ENV
+
+      - name: Clone ccminer
+        run: |
+          git clone --depth=1 https://github.com/Darktron/ccminer.git
+          cd ccminer
+          ./autogen.sh
+
+      - name: Cross compile ccminer (ARMv7)
+        run: |
+          cd ccminer
+          export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
+          export TARGET=armv7a-linux-androideabi
+          export API=21
+
+          export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
+          export CXX=$TOOLCHAIN/bin/${TARGET}${API}-clang++
+          export AR=$TOOLCHAIN/bin/llvm-ar
+          export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+          export STRIP=$TOOLCHAIN/bin/llvm-strip
+
+          ./configure \
+            --host=arm-linux-androideabi \
+            CFLAGS="-O2 -march=armv7-a -mfpu=neon -mfloat-abi=softfp"
+
+          make -j$(nproc)
+          $STRIP ccminer
+
+      - name: Upload ccminer binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ccminer-armv7
+          path: ccminer/ccminer
+
   termux:
+    needs: build-ccminer
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -75,7 +134,19 @@ jobs:
             run-as com.termux mkdir -p /data/data/com.termux/files/home
             run-as com.termux touch /data/data/com.termux/files/home/.initialized
           '
+      - name: Download ccminer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ccminer-armv7
+          path: .
 
+      - name: Push ccminer to Termux
+        run: |
+          docker exec android adb push ccminer /data/local/tmp/ccminer
+          docker exec android adb shell '
+            run-as com.termux cp /data/local/tmp/ccminer /data/data/com.termux/files/home/ccminer
+            run-as com.termux chmod +x /data/data/com.termux/files/home/ccminer
+          '
       # ===============================
       # Copy build script
       # ===============================
