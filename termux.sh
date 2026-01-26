@@ -6,40 +6,37 @@ export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 export TMPDIR=$PREFIX/tmp
+
 mkdir -p $TMPDIR
-
 cd $HOME
-
-# PENTING: Klik "Allow" pada popup yang muncul setelah perintah ini
-termux-setup-storage
 
 # Update & Install Dependensi Lengkap
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install -y automake build-essential curl clang binutils git gnupg openssl wget libjansson zlib
-curl -s https://its-pointless.github.io/setup-pointless-repo.sh | bash
-pkg install -y gcc-6
+pkg install -y libjansson build-essential clang binutils git
 
-# Clone Repo (Hapus folder lama jika ada agar tidak bentrok)
-rm -rf ccminer
-lscpu
-git clone  --single-branch -b cpuhashrate https://github.com/Mr-Bossman/ccminer.git
+SYSCTL_SRC="$PREFIX/include/linux/sysctl.h"
+SYSCTL_DST="$PREFIX/include/linux/sys/sysctl.h"
+
+if [ -f "$SYSCTL_SRC" ]; then
+  mkdir -p "$(dirname "$SYSCTL_DST")"
+  cp -f "$SYSCTL_SRC" "$SYSCTL_DST"
+fi
+
+# ===============================
+# Clone CCMINER
+# ===============================
+if [ ! -d ccminer ]; then
+  git clone --depth=1 https://github.com/Darktron/ccminer.git
+fi
+
 cd ccminer
 
-# Fix Obsolete Macros
-sed -i 's/AC_PROG_CC_C99/AC_PROG_CC/g' configure.ac
-sed -i 's/AC_HEADER_STDC//g' configure.ac
-sed -i 's/AC_CANONICAL_SYSTEM/AC_CANONICAL_TARGET/g' configure.ac
-sed -i 's/AC_PROG_GCC_TRADITIONAL//g' configure.ac
-# Update config.guess & config.sub (Link diperbaiki agar mengunduh file asli)
+chmod +x autogen.sh configure.sh build.sh start.sh
 
+# ===============================
+./autogen.sh
 
-#wget -O config.guess 'https://git.savannah.gnu.org'
-#wget -O config.sub 'https://git.savannah.gnu.org'
+CFLAGS="-O2 -march=armv7-a -mfpu=neon -mfloat-abi=softfp" \
+./configure --host=arm-linux-androideabi
 
-# PENTING: Beri izin eksekusi pada file yang baru diunduh
-echo "START BUILD"
-chmod +x build.sh configure.sh autogen.sh
-bash build.sh
-
-# Test run
-./ccminer --help
+make -j$(nproc)
