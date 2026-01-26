@@ -1,0 +1,100 @@
+name: Termux CI - Build CCMINER (Android Emulator)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  termux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ===============================
+      # Checkout
+      # ===============================
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # ===============================
+      # Download Termux APK (ARMv7)
+      # ===============================
+      - name: Download Termux APK (ARMv7)
+        run: |
+          set -e
+          URL="https://github.com/termux/termux-app/releases/download/v0.118.3/termux-app_v0.118.3+github-debug_armeabi-v7a.apk"
+          curl -fL --retry 5 --retry-delay 5 -o termux.apk "$URL"
+          file termux.apk | grep -q "Android package"
+
+      # ===============================
+      # Android Emulator (Docker)
+      # ===============================
+      - name: Pull Android Emulator Image
+        run: docker pull svijayakumar/docker-android-arm-7.1.1
+
+      - name: Start Android Emulator
+        run: |
+          docker run -d \
+            --name android \
+            --privileged \
+            -p 5555:5555 \
+            -p 6080:6080 \
+            svijayakumar/docker-android-arm-7.1.1
+
+      # ===============================
+      # Wait Emulator READY
+      # ===============================
+      - name: Wait Emulator READY
+        run: |
+          docker exec android bash -c '
+            adb start-server
+            until adb connect 127.0.0.1:5555; do sleep 5; done
+            until adb devices | grep -w "127.0.0.1:5555.*device"; do sleep 5; done
+            until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
+            echo "✅ Emulator READY"
+          '
+
+      # ===============================
+      # Install Termux
+      # ===============================
+      - name: Install Termux
+        run: |
+          docker cp termux.apk android:/tmp/termux.apk
+          docker exec android adb install -r /tmp/termux.apk
+
+          docker exec android adb shell '
+            monkey -p com.termux -c android.intent.category.LAUNCHER 1
+            sleep 30
+          '
+
+      # ===============================
+      # Prepare Termux
+      # ===============================
+      - name: Initialize Termux
+        run: |
+          docker exec android adb shell '
+            run-as com.termux mkdir -p /data/data/com.termux/files/home
+            run-as com.termux touch /data/data/com.termux/files/home/.initialized
+          '
+
+      # ===============================
+      # Copy build script
+      # ===============================
+      - name: Copy Termux build script
+        run: |
+          docker exec android adb push termux.sh /data/local/tmp/termux.sh
+          docker exec android adb shell '
+            run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh
+            run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh
+          '
+
+      # ===============================
+      # Run Termux build
+      # ===============================
+      - name: Run Termux build
+        run: |
+          docker exec android adb shell '
+            run-as com.termux \
+              /data/data/com.termux/files/usr/bin/bash \
+              -lc "cd ~ && ./termux.sh"
+          '
