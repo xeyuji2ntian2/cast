@@ -23,6 +23,7 @@ jobs:
             make \
             clang \
             curl \
+            openssl\
             unzip
 
       - name: Download Android NDK r21e
