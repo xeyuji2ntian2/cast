@@ -35,19 +35,12 @@ pkg install -y \
 echo -e "\e[1;4;32m START BUILD cpuminer-opt \e[0m"
 sleep 10
 
-rm -rf cpuminer-opt
-git clone https://github.com/JayDDee/cpuminer-opt.git
-cd ~/cpuminer-opt
-make clean   # if Makefile exists
+rm -rf termux-miner
+cd $HOME
+git clone https://github.com/wong-fi-hung/termux-miner
+cd termux-miner
+# cari skrip build Android 
+./build-android.sh   # atau instruksi dari repo
+# setelah selesai: hasil binarinya bisa kamu jalankan
+./cpuminer -h
 
-export CC="clang --sysroot=$PREFIX"
-export CXX="clang++ --sysroot=$PREFIX"
-export CFLAGS="-O3 -fPIE"
-export CXXFLAGS="-O3 -fPIE"
-export LDFLAGS="-fPIE -pie"
-
-echo 'int main(){return 0;}' > test.c
-clang --sysroot=$PREFIX test.c -fPIE -pie -o test
-./test && echo OK
-
-./build.sh
