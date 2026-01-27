@@ -1,16 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
 
+echo "scrip termux.sh di gihub action -> docker android emulator -> termux"
+echo "build cpuminer-opt"
+echo "jangan ada yg di hapus # nya itu dari chatgpt yg error"
+echo "wajib di setting"
 
-echo "scrip termux.sh di gihub action -> docker android emulator -> termux" # <<< PENTING
-echo "build cpuminer-opt" # <<< PENTING
-echo "jangan ada yg di hapus # nya itu dari chatgpt yg error" # <<< PENTING
-echo "wajib di setting" # <<< PENTING
 export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 
-# TMPDIR exec-capable # <<< PENTING
+# TMPDIR exec-capable
 export TMPDIR=$HOME/tmp
 mkdir -p $TMPDIR
 chmod 700 $TMPDIR
@@ -18,7 +18,7 @@ export CONFIG_SHELL=$PREFIX/bin/bash
 
 echo "[1/4] Update Termux di github action"
 echo "setingan ini bisa jalan"
-pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold" # <<< PENTING
+pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 
 pkg install -y \
   clang \
@@ -33,9 +33,9 @@ pkg install -y \
   openssl \
   dos2unix \
   binutils
-  
-echo "dari sini mungkin dan pasti akan ada gagal"
 
+
+echo "dari sini mungkin dan pasti akan ada gagal"
 echo "[2/4] Clone miner"
 cd $HOME
 rm -rf termux-miner
@@ -46,38 +46,39 @@ echo "[3/4] Build (native clang + lld)"
 dos2unix *.sh || true
 chmod +x *.sh || true
 
+
+# export CFLAGS="-O2 -fPIC"
+# export CFLAGS="-O2 -fPIC -include unistd.h"
+#export CFLAGS="-O2 -fPIC -include unistd.h -DNO_AFFINITY"
 export CC=clang
 export CXX=clang++
-export LD=ld.lld          # <<< FIX UTAMA
+export LD=ld.lld
 export AR=llvm-ar
 export RANLIB=llvm-ranlib
 export STRIP=llvm-strip
 
-
 export LDFLAGS=""
-# export CFLAGS="-O2 -fPIC"
-# export CFLAGS="-O2 -fPIC -include unistd.h"
-#export CFLAGS="-O2 -fPIC -include unistd.h -DNO_AFFINITY"
 export CFLAGS="-O2 -fPIC -U__linux__ -D__ANDROID__ -include unistd.h -DNO_AFFINITY"
-
 
 ./autogen.sh || true
 
 ./configure \
   --disable-assembly
-  
-echo "[PATCH] Disable CPU affinity for Android"
+
+echo "[PATCH] Disable CPU affinity safely (Android)"
 
 CPU_FILE=$(grep -rl "sched_setaffinity" . || true)
 
-if [ -z "$CPU_FILE" ]; then
-  echo "⚠️ sched_setaffinity not found, skip patch"
-else
+if [ -n "$CPU_FILE" ]; then
   echo "patching: $CPU_FILE"
-  sed -i '/sched_setaffinity/,+5d' "$CPU_FILE"
-  sed -i '/cpu_set_t/d' "$CPU_FILE"
-  sed -i '/CPU_ZERO/d' "$CPU_FILE"
-  sed -i '/CPU_SET/d' "$CPU_FILE"
+  sed -i '
+    /sched_setaffinity/{
+      i #if 0
+      a #endif
+    }
+  ' "$CPU_FILE"
+else
+  echo "⚠️ sched_setaffinity not found, skip"
 fi
 
 make -j$(nproc)
@@ -87,4 +88,3 @@ file cpuminer
 ./cpuminer -h || true
 
 echo "✅ BUILD SUCCESS (Termux native, GA-safe)"
-
