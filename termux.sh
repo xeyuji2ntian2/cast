@@ -6,8 +6,7 @@ export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 
-
-# FIX: TMPDIR must be exec-capable
+# TMPDIR exec-capable
 export TMPDIR=$HOME/tmp
 mkdir -p $TMPDIR
 chmod 700 $TMPDIR
@@ -20,29 +19,27 @@ echo "[1/5] Update Termux & install proot-distro..."
 pkg update -y
 pkg install -y proot-distro git
 
-echo "[2/5] Install Ubuntu (jika belum ada)..."
-if ! proot-distro list | grep -q ubuntu; then
-  proot-distro install ubuntu
+echo "[2/5] Install Debian (STABLE)..."
+if ! proot-distro list | grep -q debian; then
+  proot-distro install debian
 else
-  echo "Ubuntu already installed."
+  echo "Debian already installed."
 fi
 
-echo "[3/5] Masuk Ubuntu & setup environment..."
+echo "[3/5] Masuk Debian & build miner..."
 
-echo "[3/4] Setup Ubuntu & build miner..."
-
-proot-distro login ubuntu -- env \
+proot-distro login debian -- env \
   DEBIAN_FRONTEND=noninteractive \
   LANG=C \
   LC_ALL=C \
   bash <<'EOF'
 set -e
 
-echo "[Ubuntu] Update system..."
+echo "[Debian] Update system..."
 apt update
 
-echo "[Ubuntu] Install build dependencies..."
-apt install -y \
+echo "[Debian] Install build dependencies..."
+apt install -y --no-install-recommends \
   build-essential \
   automake \
   autoconf \
@@ -50,19 +47,21 @@ apt install -y \
   libcurl4-openssl-dev \
   libjansson-dev \
   libssl-dev \
-  git
+  git \
+  ca-certificates
 
-echo "[Ubuntu] Clone termux-miner..."
-if [ ! -d termux-miner ]; then
-  git clone https://github.com/wong-fi-hung/termux-miner.git
-fi
-
+echo "[Debian] Clone termux-miner..."
+cd ~
+rm -rf termux-miner
+git clone https://github.com/wong-fi-hung/termux-miner.git
 cd termux-miner
 
-echo "[Ubuntu] Build miner..."
+echo "[Debian] Build miner..."
 chmod +x build.sh
 ./build.sh
 
-echo "[Ubuntu] Build DONE"
+echo "[Debian] Build DONE"
 ./cpuminer -h
 EOF
+
+echo "[5/5] ALL DONE ✔"
