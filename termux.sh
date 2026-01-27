@@ -5,9 +5,11 @@ export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 
-# proot fix
+# proot hard fix
 export PROOT_DISABLE_SECCOMP=1
 export PROOT_NO_SECCOMP=1
+export LANG=C
+export LC_ALL=C
 
 cd $HOME
 
@@ -15,7 +17,7 @@ echo "[1/5] Update Termux"
 pkg update -y
 pkg install -y proot-distro git
 
-echo "[2/5] Install Ubuntu distro"
+echo "[2/5] Install Ubuntu distro (NO LOCALE)"
 if ! proot-distro list | grep -q "^ubuntu"; then
   proot-distro install ubuntu
 fi
@@ -24,16 +26,26 @@ echo "[3/5] Enter Ubuntu & build miner"
 proot-distro login ubuntu -- env \
   PROOT_DISABLE_SECCOMP=1 \
   PROOT_NO_SECCOMP=1 \
+  LANG=C \
+  LC_ALL=C \
+  DEBIAN_FRONTEND=noninteractive \
   bash <<'EOF'
 set -e
 
-export DEBIAN_FRONTEND=noninteractive
+# 🔥 disable locale generation completely
+export LANG=C
+export LC_ALL=C
+
+echo "[Ubuntu] Disable locale (critical)"
+rm -f /etc/locale.gen || true
+rm -f /var/lib/locales/supported.d/* || true
+echo "LANG=C" > /etc/default/locale
 
 echo "[Ubuntu] Update system"
 apt update -y
 
 echo "[Ubuntu] Install deps"
-apt install -y \
+apt install -y --no-install-recommends \
   build-essential \
   automake \
   autoconf \
@@ -43,7 +55,8 @@ apt install -y \
   libjansson-dev \
   libssl-dev \
   git \
-  dos2unix
+  dos2unix \
+  ca-certificates
 
 echo "[Ubuntu] Clone miner"
 cd ~
