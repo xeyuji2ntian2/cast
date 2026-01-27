@@ -29,7 +29,13 @@ fi
 
 echo "[3/5] Masuk Ubuntu & setup environment..."
 
-proot-distro login ubuntu -- bash <<'EOF'
+echo "[3/4] Setup Ubuntu & build miner..."
+
+proot-distro login ubuntu -- env \
+  DEBIAN_FRONTEND=noninteractive \
+  LANG=C \
+  LC_ALL=C \
+  bash <<'EOF'
 set -e
 
 echo "[Ubuntu] Update system..."
