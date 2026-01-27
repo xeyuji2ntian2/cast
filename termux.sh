@@ -41,7 +41,8 @@ git clone https://github.com/wong-fi-hung/termux-miner
 cd termux-miner
 chmod +x ./build-android.sh
 # cari skrip build Android 
-./build-android.sh   # atau instruksi dari repo
+bash build-android.sh
+
 # setelah selesai: hasil binarinya bisa kamu jalankan
 ./cpuminer -h
 
