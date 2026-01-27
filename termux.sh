@@ -16,7 +16,7 @@ chmod 700 $TMPDIR
 export CONFIG_SHELL=$PREFIX/bin/bash
 
 echo "[1/4] Update Termux di github action"
-echo"setingan ini bisa jalan"
+echo "setingan ini bisa jalan"
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold" # <<< PENTING
 
 pkg install -y \
