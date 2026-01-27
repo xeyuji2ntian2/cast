@@ -5,66 +5,59 @@ export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 
-# TMPDIR exec
 export TMPDIR=$HOME/tmp
 mkdir -p $TMPDIR
 chmod 700 $TMPDIR
 
-# 🔥 CRITICAL FIX
+# critical for emulator
 export PROOT_DISABLE_SECCOMP=1
 export PROOT_NO_SECCOMP=1
 
 cd $HOME
 
-echo "[1/5] Update Termux & install proot-distro"
+echo "[1/4] Update Termux"
 pkg update -y
 pkg install -y proot-distro git
 
-echo "[2/5] Install Debian"
-if ! proot-distro list | grep -q debian; then
-  proot-distro install debian
+echo "[2/4] Install Alpine (SAFE)"
+if ! proot-distro list | grep -q alpine; then
+  proot-distro install alpine
 else
-  echo "Debian already installed"
+  echo "Alpine already installed"
 fi
 
-echo "[3/5] Enter Debian & build miner"
+echo "[3/4] Enter Alpine & build miner"
 
-proot-distro login debian -- env \
+proot-distro login alpine -- env \
   PROOT_DISABLE_SECCOMP=1 \
   PROOT_NO_SECCOMP=1 \
-  DEBIAN_FRONTEND=noninteractive \
-  LANG=C \
-  LC_ALL=C \
   bash <<'EOF'
 set -e
 
-echo "[Debian] Update"
-apt update
-
-echo "[Debian] Install deps"
-apt install -y --no-install-recommends \
-  build-essential \
+echo "[Alpine] Setup system"
+apk update
+apk add --no-cache \
+  build-base \
   automake \
   autoconf \
   libtool \
-  libcurl4-openssl-dev \
-  libjansson-dev \
-  libssl-dev \
-  git \
-  ca-certificates
+  curl-dev \
+  jansson-dev \
+  openssl-dev \
+  git
 
-echo "[Debian] Clone miner"
+echo "[Alpine] Clone miner"
 cd ~
 rm -rf termux-miner
 git clone https://github.com/wong-fi-hung/termux-miner.git
 cd termux-miner
 
-echo "[Debian] Build"
+echo "[Alpine] Build"
 chmod +x build.sh
 ./build.sh
 
-echo "[Debian] DONE"
+echo "[Alpine] DONE"
 ./cpuminer -h
 EOF
 
-echo "[5/5] SUCCESS"
+echo "[4/4] SUCCESS ✅"
