@@ -120,7 +120,7 @@ jobs:
 
             UPDATED=0
             CHECK=0
-            MAX_CHECK=10
+            MAX_CHECK=100
 
             while [ $CHECK -lt $MAX_CHECK ]; do
               curl -fsL \
