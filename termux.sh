@@ -14,14 +14,20 @@ cd $HOME
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install -y \
   curl \
+  pkg-config
   libtool \
+  autoconf  \
   automake \
   libjansson \
   libcurl \
+  libcurl-dev \
   libgmp \
   openssl \
+  openssl-dev \
   build-essential \
   clang binutils \
+  clang \
+  make \
   git
 
 echo -e "\e[1;4;32m START BUILD cpuminer-opt \e[0m"
@@ -34,5 +40,7 @@ export CXX=clang++
 export LD=ld.lld
 export CFLAGS="-O3"
 export CXXFLAGS="-O3"
-
 ./build.sh
+#./autogen.sh 
+#./configure CFLAGS="-O3" --with-curl 
+#make
