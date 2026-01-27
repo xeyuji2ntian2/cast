@@ -144,9 +144,9 @@ jobs:
 
               echo "⏳ termux.sh unchanged, waiting 20s... $CHECK"
               sleep 20
-              echo ""
-              echo ""
-              echo ""
+              echo "------------------------------------------------------------"
+              echo "------------------------------------------------------------"
+              echo "------------------------------------------------------------"
               CHECK=$((CHECK+1))
             done
 
@@ -162,8 +162,8 @@ jobs:
                 "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
             fi
 
-            echo "⏳ Waiting 30s before next attempt..."
-            sleep 30
+            echo "⏳ Waiting 5s before next attempt..."
+            sleep 5
             RETRY=$((RETRY+1))
           done
 
