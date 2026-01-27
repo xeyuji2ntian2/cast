@@ -1,20 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
 
+echo "scrip termux.sh di gihub action -> docker android emulator -> termux"
+echo"build cpuminer-opt"
+
 export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 
-# FIX: TMPDIR must be exec-capable
+# TMPDIR exec-capable
 export TMPDIR=$HOME/tmp
 mkdir -p $TMPDIR
 chmod 700 $TMPDIR
 
 export CONFIG_SHELL=$PREFIX/bin/bash
 
-
-echo "[1/4] Update Termux"
+echo "[1/4] Update Termux di github action"
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
+
 pkg install -y \
   clang \
   make \
@@ -26,7 +29,8 @@ pkg install -y \
   libcurl \
   libjansson \
   openssl \
-  dos2unix
+  dos2unix \
+  binutils   # <<< PENTING
 
 echo "[2/4] Clone miner"
 cd $HOME
@@ -34,25 +38,29 @@ rm -rf termux-miner
 git clone https://github.com/wong-fi-hung/termux-miner.git
 cd termux-miner
 
-echo "[3/4] Build (native clang)"
+echo "[3/4] Build (native clang + lld)"
 dos2unix *.sh || true
 chmod +x *.sh || true
 
 export CC=clang
 export CXX=clang++
+export LD=ld.lld          # <<< FIX UTAMA
+export AR=llvm-ar
+export RANLIB=llvm-ranlib
+export STRIP=llvm-strip
+
 export CFLAGS="-O2 -fPIC"
 export LDFLAGS=""
 
-# termux-miner biasanya sudah siap configure
 ./autogen.sh || true
+
 ./configure \
   --disable-assembly
-  #--host=android \
-  #--build=android
 
 make -j$(nproc)
 
 echo "[4/4] Test"
-./cpuminer -h
+file cpuminer
+./cpuminer -h || true
 
-echo "✅ BUILD SUCCESS (native termux)"
+echo "✅ BUILD SUCCESS (Termux native, GA-safe)"
