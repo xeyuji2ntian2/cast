@@ -20,8 +20,8 @@ echo "[1/4] Update Termux"
 pkg update -y
 pkg install -y proot-distro git
 
-echo "[2/4] Install Alpine (SAFE)"
-if ! proot-distro list | grep -q alpine; then
+echo "[2/4] Ensure Alpine installed"
+if ! proot-distro list | grep -q "^alpine"; then
   proot-distro install alpine
 else
   echo "Alpine already installed"
