@@ -6,7 +6,7 @@ export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 
 echo "[1/4] Update Termux"
-pkg update -y
+pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install -y \
   clang \
   make \
