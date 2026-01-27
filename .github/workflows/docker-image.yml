@@ -142,7 +142,7 @@ jobs:
                 break
               fi
 
-              echo "⏳ termux.sh unchanged, waiting 20s..."
+              echo "⏳ termux.sh unchanged, waiting 20s... $CHECK"
               sleep 20
               CHECK=$((CHECK+1))
             done
