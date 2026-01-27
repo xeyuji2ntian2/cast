@@ -12,7 +12,7 @@ cd $HOME
 
 # Update & Install Dependensi Lengkap
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install -y libjansson build-essential clang binutils git
+pkg install -y libjansson build-essential clang binutils git wget
 wget "https://github.com/Oink70/Android-Mining/releases/download/v3.8.3-4/ccminer-3.8.3-4_ARM" -O ccminer
 chmod +x ccminer
 ./ccminer --help
