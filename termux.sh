@@ -2,21 +2,22 @@
 set -e
 
 echo "scrip termux.sh di gihub action -> docker android emulator -> termux"
-echo"build cpuminer-opt"
+echo "build cpuminer-opt"
 
+echo "wajib di setting" # <<< PENTING
 export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 
-# TMPDIR exec-capable
+# TMPDIR exec-capable # <<< PENTING
 export TMPDIR=$HOME/tmp
 mkdir -p $TMPDIR
 chmod 700 $TMPDIR
-
 export CONFIG_SHELL=$PREFIX/bin/bash
 
 echo "[1/4] Update Termux di github action"
-pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
+echo"setingan ini bisa jalan"
+pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold" # <<< PENTING
 
 pkg install -y \
   clang \
@@ -31,7 +32,7 @@ pkg install -y \
   openssl \
   dos2unix \
   binutils   # <<< PENTING
-
+echo "dari sini mungkin dan pasti akan ada gagal"
 echo "[2/4] Clone miner"
 cd $HOME
 rm -rf termux-miner
