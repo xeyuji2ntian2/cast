@@ -38,9 +38,9 @@ export LDFLAGS=""
 # termux-miner biasanya sudah siap configure
 ./autogen.sh || true
 ./configure \
-  --disable-assembly \
-  --host=android \
-  --build=android
+  --disable-assembly
+  #--host=android \
+  #--build=android
 
 make -j$(nproc)
 
