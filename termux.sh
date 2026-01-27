@@ -23,6 +23,16 @@ pkg install -y \
   build-essential \
   clang binutils \
   git
+
+echo -e "\e[1;4;32m START BUILD cpuminer-opt \e[0m"
+
 git clone https://github.com/JayDDee/cpuminer-opt.git
 cd cpuminer-opt
+
+export CC=clang
+export CXX=clang++
+export LD=ld.lld
+export CFLAGS="-O3"
+export CXXFLAGS="-O3"
+
 ./build.sh
