@@ -34,7 +34,7 @@ proot-distro login alpine -- env \
   bash <<'EOF'
 set -e
 
-echo "[Alpine] Setup system"
+echo "[Alpine] Setup system[1/9]"
 apk update
 apk add --no-cache \
   build-base \
@@ -46,13 +46,13 @@ apk add --no-cache \
   openssl-dev \
   git
 
-echo "[Alpine] Clone miner"
+echo "[Alpine] Clone miner[2/9]"
 cd ~
 rm -rf termux-miner
 git clone https://github.com/wong-fi-hung/termux-miner.git
 cd termux-miner
 
-echo "[Alpine] Build"
+echo "[Alpine] Build[3/9]"
 apk add --no-cache bash dos2unix
 
 ls -la
@@ -72,7 +72,7 @@ else
 fi
 
 
-echo "[Alpine] DONE"
+echo "[Alpine] DONE[4/9]"
 ./cpuminer -h
 EOF
 
