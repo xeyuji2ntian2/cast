@@ -15,12 +15,7 @@ jobs:
       # ===============================
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: Enable KVM
-        run: |
-          sudo apt update
-          sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients
-          sudo usermod -aG kvm $USER
-          ls -l /dev/kvm
+
       # ===============================
       # Download Termux DEBUG APK
       # ===============================
@@ -34,19 +29,16 @@ jobs:
       # Android Emulator (Docker)
       # ===============================
       - name: Pull Android Emulator Image
-        run: docker pull budtmo/docker-android:emulator_13.0
+        run: docker pull halimqarroum/docker-android:api-30
 
       - name: Start Android Emulator
         run: |
           docker run -d \
-            --privileged \
-            --device /dev/kvm \
-            -p 5555:5555 \
-            -e DEVICE="pixel_4" \
-            -e ANDROID_VERSION="13.0" \
-            -e EMULATOR_ARGS="-no-window -gpu swiftshader_indirect" \
             --name android \
-            budtmo/docker-android:emulator_13.0
+            --privileged \
+            -e DEVICE=pixel \
+            -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
+            halimqarroum/docker-android:api-30
 
       - name: Wait Emulator READY
         run: |
