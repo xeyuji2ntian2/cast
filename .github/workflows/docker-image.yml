@@ -1,25 +1,98 @@
-name: Mirror Docker Image to GHCR
+#ghcr.io/xeyuji2ntian2/docker-android:api-30
+name: Termux CI - Build CCMINER (Android Emulator)
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  mirror:
+  termux:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
-      - name: Login to GHCR
-        run: echo "${{ secrets.TOKEN_GITHUB }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      # ===============================
+      # Checkout
+      # ===============================
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Pull source image
-        run: docker pull halimqarroum/docker-android:api-30
-
-      - name: Retag image
+      # ===============================
+      # Download Termux DEBUG APK
+      # ===============================
+      - name: Download Termux DEBUG APK
         run: |
-          docker tag halimqarroum/docker-android:api-30 \
-          ghcr.io/${{ github.repository_owner }}/docker-android:api-30
+          set -e
+          URL="https://github.com/termux/termux-app/releases/download/v0.119.0-beta.2/termux-app_v0.119.0-beta.2+apt-android-7-github-debug_x86_64.apk"
+          curl -fL --retry 5 --retry-delay 5 -o termux.apk "$URL"
+          file termux.apk | grep -q "Android package"
+      # ===============================
+      # Android Emulator (Docker)
+      # ===============================
+      - name: Pull Android Emulator Image
+        run: docker pull ghcr.io/xeyuji2ntian2/docker-android:api-30
 
-      - name: Push to GHCR
-        run: docker push ghcr.io/${{ github.repository_owner }}/docker-android:api-30
+      - name: Start Android Emulator
+        run: |
+          docker run -d \
+            --name android \
+            --privileged \
+            -e DEVICE=pixel \
+            -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
+            ghcr.io/xeyuji2ntian2/docker-android:api-30
+
+      - name: Wait Emulator READY
+        run: |
+          docker exec android bash -c '
+            adb start-server
+            until adb devices | grep "emulator-5554.*device"; do sleep 5; done
+            until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
+            until adb shell pm list packages >/dev/null 2>&1; do sleep 5; done
+            echo "✅ Emulator READY"
+          '
+
+      # ===============================
+      # Install Termux
+      # ===============================
+      - name: Install Termux
+        run: |
+          docker cp termux.apk android:/tmp/termux.apk
+          docker exec android adb install --no-streaming -r /tmp/termux.apk
+          docker exec android adb shell '
+            monkey -p com.termux -c android.intent.category.LAUNCHER 1
+            sleep 25
+          '
+
+      # ===============================
+      # Termux Build Script
+      # ===============================
+      - name: Copy Termux build script
+        run: |
+          docker cp termux.sh android:/tmp/termux.sh
+          docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
+          docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
+
+      # ===============================
+      # Run Termux Script
+      # ===============================
+      - name: Run Termux build
+        run: |
+          # 1. Pindahkan script ke internal storage Termux agar bisa dieksekusi (menghindari noexec)
+          docker exec android adb shell "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
+
+          # 2. Beri izin eksekusi di dalam home directory
+          docker exec android adb shell "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
+          
+          # 3. Jalankan script dari konteks direktori home Termux
+          docker exec android adb shell "run-as com.termux /data/data/com.termux/files/usr/bin/bash -c 'cd /data/data/com.termux/files/home && ./termux.sh'"
+
+      # ===============================
+      # Run Termux Script
+      # ===============================
+      #- name: Run Termux build
+      #  run: |
+      #    docker exec android adb shell '
+      #      run-as com.termux \
+      #        /data/data/com.termux/files/usr/bin/bash \
+      #        /data/local/tmp/termux.sh
+      #    '
