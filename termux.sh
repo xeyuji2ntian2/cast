@@ -4,7 +4,7 @@ set -e
 
 echo "scrip termux.sh di gihub action -> docker android emulator -> termux" # <<< PENTING
 echo "build cpuminer-opt" # <<< PENTING
-
+echo "jangan ada yg di hapus # nya itu dari chatgpt yg error" # <<< PENTING
 echo "wajib di setting" # <<< PENTING
 export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
@@ -68,17 +68,10 @@ export CFLAGS="-O2 -fPIC -U__linux__ -D__ANDROID__ -include unistd.h -DNO_AFFINI
   
 echo "[PATCH] Disable CPU affinity for Android"
 
-sed -i \
-  '/sched_setaffinity/,+5/d' cpu-miner.c
-
-sed -i \
-  '/cpu_set_t/d' cpu-miner.c
-
-sed -i \
-  '/CPU_ZERO/d' cpu-miner.c
-
-sed -i \
-  '/CPU_SET/d' cpu-miner.c
+# sed -i '/sched_setaffinity/,+5/d' cpu-miner.c
+# sed -i '/cpu_set_t/d' cpu-miner.c
+# sed -i '/CPU_ZERO/d' cpu-miner.c
+# sed -i '/CPU_SET/d' cpu-miner.c
 
 make -j$(nproc)
 
