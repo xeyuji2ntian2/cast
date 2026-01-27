@@ -14,7 +14,7 @@ cd $HOME
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install -y \
   curl \
-  pkg-config
+  pkg-config \
   libtool \
   autoconf  \
   automake \
