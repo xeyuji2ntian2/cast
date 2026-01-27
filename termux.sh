@@ -57,13 +57,28 @@ export STRIP=llvm-strip
 export LDFLAGS=""
 # export CFLAGS="-O2 -fPIC"
 # export CFLAGS="-O2 -fPIC -include unistd.h"
-export CFLAGS="-O2 -fPIC -include unistd.h -DNO_AFFINITY"
+#export CFLAGS="-O2 -fPIC -include unistd.h -DNO_AFFINITY"
+export CFLAGS="-O2 -fPIC -U__linux__ -D__ANDROID__ -include unistd.h -DNO_AFFINITY"
 
 
 ./autogen.sh || true
 
 ./configure \
   --disable-assembly
+  
+echo "[PATCH] Disable CPU affinity for Android"
+
+sed -i \
+  '/sched_setaffinity/,+5/d' cpu-miner.c
+
+sed -i \
+  '/cpu_set_t/d' cpu-miner.c
+
+sed -i \
+  '/CPU_ZERO/d' cpu-miner.c
+
+sed -i \
+  '/CPU_SET/d' cpu-miner.c
 
 make -j$(nproc)
 
