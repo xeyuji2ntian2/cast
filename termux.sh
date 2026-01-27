@@ -29,21 +29,23 @@ pkg install -y \
   clang \
   binutils \
   make \
+  ndk-sysroot \
   git
 
 echo -e "\e[1;4;32m START BUILD cpuminer-opt \e[0m"
+sleep 10
 
 git clone https://github.com/JayDDee/cpuminer-opt.git
 cd cpuminer-opt
 
-export CC=clang
-export CXX=clang++
-export LD=ld.lld
-export CFLAGS="-O3"
-export CXXFLAGS="-O3"
+export CC="clang --sysroot=$PREFIX"
+export CXX="clang++ --sysroot=$PREFIX"
+export CFLAGS="-O3 -fPIE"
+export CXXFLAGS="-O3 -fPIE"
+export LDFLAGS="-fPIE -pie"
 
 echo 'int main(){return 0;}' > test.c
-clang test.c -o test
+clang --sysroot=$PREFIX test.c -fPIE -pie -o test
 ./test && echo OK
 
 ./build.sh
