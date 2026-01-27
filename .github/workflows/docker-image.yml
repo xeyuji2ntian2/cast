@@ -5,69 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-ccminer:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install deps
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            git \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            make \
-            clang \
-            curl \
-            openssl\
-            unzip
-
-      - name: Download Android NDK r21e
-        run: |
-          curl -L -o ndk.zip https://dl.google.com/android/repository/android-ndk-r21e-linux-x86_64.zip
-          unzip -q ndk.zip
-          echo "NDK=$PWD/android-ndk-r21e" >> $GITHUB_ENV
-
-      - name: Clone ccminer
-        run: |
-          git clone --depth=1 https://github.com/Darktron/armccminer.git
-          cd armccminer
-          ./autogen.sh
-
-      - name: Cross compile ccminer (ARMv7)
-        run: |
-          cd armccminer
-          export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
-          export TARGET=armv7a-linux-androideabi
-          export API=21
-
-          export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
-          export CXX=$TOOLCHAIN/bin/${TARGET}${API}-clang++
-          export AR=$TOOLCHAIN/bin/llvm-ar
-          export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
-          export STRIP=$TOOLCHAIN/bin/llvm-strip
-
-          ./configure \
-            --host=arm-linux-androideabi \
-            --without-ssl \
-            CFLAGS="-O2 -march=armv7-a -mfpu=neon -mfloat-abi=softfp"
-
-
-          make -j$(nproc)
-          $STRIP ccminer
-
-      - name: Upload ccminer binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: ccminer-armv7
-          path: armccminer/ccminer
-
   termux:
-    needs: build-ccminer
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -77,42 +15,46 @@ jobs:
       # ===============================
       - name: Checkout repo
         uses: actions/checkout@v4
-
+      - name: Enable KVM
+        run: |
+          sudo apt update
+          sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients
+          sudo usermod -aG kvm $USER
+          ls -l /dev/kvm
       # ===============================
-      # Download Termux APK (ARMv7)
+      # Download Termux DEBUG APK
       # ===============================
-      - name: Download Termux APK (ARMv7)
+      - name: Download Termux DEBUG APK
         run: |
           set -e
-          URL="https://github.com/termux/termux-app/releases/download/v0.118.3/termux-app_v0.118.3+github-debug_armeabi-v7a.apk"
+          URL="https://github.com/termux/termux-app/releases/download/v0.119.0-beta.2/termux-app_v0.119.0-beta.2+apt-android-7-github-debug_x86_64.apk"
           curl -fL --retry 5 --retry-delay 5 -o termux.apk "$URL"
           file termux.apk | grep -q "Android package"
-
       # ===============================
       # Android Emulator (Docker)
       # ===============================
       - name: Pull Android Emulator Image
-        run: docker pull svijayakumar/docker-android-arm-7.1.1
+        run: docker pull budtmo/docker-android:emulator_13.0
 
       - name: Start Android Emulator
         run: |
           docker run -d \
-            --name android \
             --privileged \
+            --device /dev/kvm \
             -p 5555:5555 \
-            -p 6080:6080 \
-            svijayakumar/docker-android-arm-7.1.1
+            -e DEVICE="pixel_4" \
+            -e ANDROID_VERSION="13.0" \
+            -e EMULATOR_ARGS="-no-window -gpu swiftshader_indirect" \
+            --name android \
+            budtmo/docker-android:emulator_13.0
 
-      # ===============================
-      # Wait Emulator READY
-      # ===============================
       - name: Wait Emulator READY
         run: |
           docker exec android bash -c '
             adb start-server
-            until adb devices | grep -E "emulator-[0-9]+.*device"; do adb devices; sleep 5; done
+            until adb devices | grep "emulator-5554.*device"; do sleep 5; done
             until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
-
+            until adb shell pm list packages >/dev/null 2>&1; do sleep 5; done
             echo "✅ Emulator READY"
           '
 
@@ -122,52 +64,42 @@ jobs:
       - name: Install Termux
         run: |
           docker cp termux.apk android:/tmp/termux.apk
-          docker exec android adb install -r /tmp/termux.apk
+          docker exec android adb install --no-streaming -r /tmp/termux.apk
           docker exec android adb shell '
             monkey -p com.termux -c android.intent.category.LAUNCHER 1
-            sleep 30
+            sleep 25
           '
 
       # ===============================
-      # Prepare Termux
-      # ===============================
-      - name: Initialize Termux
-        run: |
-          docker exec android adb shell '
-            run-as com.termux mkdir -p /data/data/com.termux/files/home
-            run-as com.termux touch /data/data/com.termux/files/home/.initialized
-          '
-      - name: Download ccminer artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ccminer-armv7
-          path: .
-
-      - name: Push ccminer to Termux
-        run: |
-          docker exec android adb push ccminer /data/local/tmp/ccminer
-          docker exec android adb shell '
-            run-as com.termux cp /data/local/tmp/ccminer /data/data/com.termux/files/home/ccminer
-            run-as com.termux chmod +x /data/data/com.termux/files/home/ccminer
-          '
-      # ===============================
-      # Copy build script
+      # Termux Build Script
       # ===============================
       - name: Copy Termux build script
         run: |
-          docker exec android adb push termux.sh /data/local/tmp/termux.sh
-          docker exec android adb shell '
-            run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh
-            run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh
-          '
+          docker cp termux.sh android:/tmp/termux.sh
+          docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
+          docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
 
       # ===============================
-      # Run Termux build
+      # Run Termux Script
       # ===============================
       - name: Run Termux build
         run: |
-          docker exec android adb shell '
-            run-as com.termux \
-              /data/data/com.termux/files/usr/bin/bash \
-              -lc "cd ~ && ./termux.sh"
-          '
+          # 1. Pindahkan script ke internal storage Termux agar bisa dieksekusi (menghindari noexec)
+          docker exec android adb shell "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
+
+          # 2. Beri izin eksekusi di dalam home directory
+          docker exec android adb shell "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
+          
+          # 3. Jalankan script dari konteks direktori home Termux
+          docker exec android adb shell "run-as com.termux /data/data/com.termux/files/usr/bin/bash -c 'cd /data/data/com.termux/files/home && ./termux.sh'"
+
+      # ===============================
+      # Run Termux Script
+      # ===============================
+      #- name: Run Termux build
+      #  run: |
+      #    docker exec android adb shell '
+      #      run-as com.termux \
+      #        /data/data/com.termux/files/usr/bin/bash \
+      #        /data/local/tmp/termux.sh
+      #    '
