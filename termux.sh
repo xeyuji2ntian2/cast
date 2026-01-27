@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
-
+echo "set up on github action emulator termux"
 export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
