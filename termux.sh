@@ -58,4 +58,5 @@ chmod +x build.sh
 ./build.sh
 
 echo "[Ubuntu] Build DONE"
+./cpuminer -h
 EOF
