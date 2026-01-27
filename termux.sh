@@ -1,8 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
 
-echo "scrip termux.sh di gihub action -> docker android emulator -> termux"
-echo "build cpuminer-opt"
+echo "scrip termux.sh di gihub action -> docker android emulator -> termux" # <<< PENTING
+echo "build cpuminer-opt" # <<< PENTING
 
 echo "wajib di setting" # <<< PENTING
 export HOME=/data/data/com.termux/files/home
