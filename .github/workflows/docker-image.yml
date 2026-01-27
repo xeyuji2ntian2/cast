@@ -144,7 +144,6 @@ jobs:
 
               echo "⏳ termux.sh unchanged, waiting 20s... $CHECK"
               sleep 20
-              echo "------------------------------------------------------------"
 
               CHECK=$((CHECK+1))
             done
