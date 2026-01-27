@@ -22,6 +22,14 @@ pkg install -y \
 
 echo "[2/4] Clone miner"
 cd $HOME
+rm -rf jansson
+git clone https://github.com/akheron/jansson.git
+cd jansson
+autoreconf -i
+./configure --prefix=$PREFIX
+make
+make install
+cd $HOME
 rm -rf termux-miner
 git clone https://github.com/wong-fi-hung/termux-miner.git
 cd termux-miner
