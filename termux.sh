@@ -39,6 +39,7 @@ rm -rf termux-miner
 cd $HOME
 git clone https://github.com/wong-fi-hung/termux-miner
 cd termux-miner
+chmod +x ./build-android.sh
 # cari skrip build Android 
 ./build-android.sh   # atau instruksi dari repo
 # setelah selesai: hasil binarinya bisa kamu jalankan
