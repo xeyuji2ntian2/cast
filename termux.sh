@@ -1,48 +1,47 @@
 #!/data/data/com.termux/files/usr/bin/bash
-set -euo pipefail
 
-# Setup Path
-export HOME=/data/data/com.termux/files/home
-export PREFIX=/data/data/com.termux/files/usr
-export PATH=$PREFIX/bin:$PATH
+set -e
 
-# FIX: TMPDIR must be exec-capable
-export TMPDIR=$HOME/tmp
-mkdir -p $TMPDIR
-chmod 700 $TMPDIR
+echo "[1/5] Update Termux & install proot-distro..."
+pkg update -y
+pkg install -y proot-distro git
 
-export CONFIG_SHELL=$PREFIX/bin/bash
+echo "[2/5] Install Ubuntu (jika belum ada)..."
+if ! proot-distro list | grep -q ubuntu; then
+  proot-distro install ubuntu
+else
+  echo "Ubuntu already installed."
+fi
 
-cd $HOME
+echo "[3/5] Masuk Ubuntu & setup environment..."
 
-pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
-pkg install -y \
-  curl \
-  pkg-config \
-  libtool \
-  autoconf \
+proot-distro login ubuntu -- bash <<'EOF'
+set -e
+
+echo "[Ubuntu] Update system..."
+apt update
+
+echo "[Ubuntu] Install build dependencies..."
+apt install -y \
+  build-essential \
   automake \
-  libjansson \
-  libcurl \
-  libgmp \
-  openssl \
-  clang \
-  binutils \
-  make \
-  ndk-sysroot \
+  autoconf \
+  libtool \
+  libcurl4-openssl-dev \
+  libjansson-dev \
+  libssl-dev \
   git
 
-echo -e "\e[1;4;32m START BUILD cpuminer-opt \e[0m"
-sleep 10
-date +"%H:%M:%S"
-rm -rf termux-miner
-cd $HOME
-git clone https://github.com/wong-fi-hung/termux-miner
+echo "[Ubuntu] Clone termux-miner..."
+if [ ! -d termux-miner ]; then
+  git clone https://github.com/wong-fi-hung/termux-miner.git
+fi
+
 cd termux-miner
-chmod +x ./build-android.sh
-# cari skrip build Android 
-bash build-android.sh
 
-# setelah selesai: hasil binarinya bisa kamu jalankan
-./cpuminer -h
+echo "[Ubuntu] Build miner..."
+chmod +x build.sh
+./build.sh
 
+echo "[Ubuntu] Build DONE"
+EOF
