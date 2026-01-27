@@ -84,16 +84,56 @@ jobs:
           # 2. Beri izin eksekusi di dalam home directory
           docker exec android adb shell "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
           
-          # 3. Jalankan script dari konteks direktori home Termux
-          docker exec android adb shell "run-as com.termux /data/data/com.termux/files/usr/bin/bash -c 'cd /data/data/com.termux/files/home && ./termux.sh'"
 
       # ===============================
-      # Run Termux Script
+      # Run Termux Script (retry 5x)
       # ===============================
-      #- name: Run Termux build
-      #  run: |
-      #    docker exec android adb shell '
-      #      run-as com.termux \
-      #        /data/data/com.termux/files/usr/bin/bash \
-      #        /data/local/tmp/termux.sh
-      #    '
+      - name: Run Termux build (retry 5x)
+        run: |
+          set +e
+
+          MAX_RETRY=5
+          RETRY=0
+          SUCCESS=0
+
+          while [ $RETRY -lt $MAX_RETRY ]; do
+            echo "🚀 Attempt $((RETRY+1)) / $MAX_RETRY running termux.sh"
+
+            docker exec android adb shell \
+              "run-as com.termux /data/data/com.termux/files/usr/bin/bash -c \
+              'cd /data/data/com.termux/files/home && ./termux.sh'"
+
+            EXIT_CODE=$?
+
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "✅ termux.sh SUCCESS"
+              SUCCESS=1
+              break
+            fi
+
+            echo "❌ termux.sh FAILED (exit=$EXIT_CODE)"
+            echo "⏳ Waiting 30 seconds before retry..."
+            sleep 60
+
+            echo "⬇️ Re-download termux.sh from repo"
+            curl -fL --retry 5 --retry-delay 5 \
+              -o termux.sh \
+              https://raw.githubusercontent.com/${{ github.repository }}/main/termux.sh
+
+            docker cp termux.sh android:/tmp/termux.sh
+            docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
+            docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
+
+            docker exec android adb shell \
+              "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
+
+            docker exec android adb shell \
+              "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
+
+            RETRY=$((RETRY+1))
+          done
+
+          if [ $SUCCESS -ne 1 ]; then
+            echo "💥 termux.sh FAILED after $MAX_RETRY attempts"
+            exit 1
+          fi
