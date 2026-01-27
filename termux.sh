@@ -17,7 +17,7 @@ pkg install -y \
   libtool \
   automake \
   libjansson \
-  libcur \
+  libcurl \
   libgmp \
   openssl \
   build-essential \
