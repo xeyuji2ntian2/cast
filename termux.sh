@@ -67,3 +67,4 @@ file cpuminer
 ./cpuminer -h || true
 
 echo "✅ BUILD SUCCESS (Termux native, GA-safe)"
+
