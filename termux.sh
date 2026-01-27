@@ -53,8 +53,24 @@ git clone https://github.com/wong-fi-hung/termux-miner.git
 cd termux-miner
 
 echo "[Alpine] Build"
-chmod +x build.sh
-./build.sh
+apk add --no-cache bash dos2unix
+
+ls -la
+
+# cari script build
+if [ -f build.sh ]; then
+  dos2unix build.sh
+  chmod +x build.sh
+  bash build.sh
+elif [ -f build-android.sh ]; then
+  dos2unix build-android.sh
+  chmod +x build-android.sh
+  bash build-android.sh
+else
+  echo "❌ No build script found"
+  exit 1
+fi
+
 
 echo "[Alpine] DONE"
 ./cpuminer -h
