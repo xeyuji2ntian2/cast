@@ -30,8 +30,7 @@ pkg install -y \
   binutils \
   make \
   ndk-sysroot \
-  git \ 
-  libandroid-support
+  git
 
 echo -e "\e[1;4;32m START BUILD cpuminer-opt \e[0m"
 sleep 10
