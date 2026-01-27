@@ -13,30 +13,6 @@ cd $HOME
 # Update & Install Dependensi Lengkap
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install -y libjansson build-essential clang binutils git
-
-SYSCTL_SRC="$PREFIX/include/linux/sysctl.h"
-SYSCTL_DST="$PREFIX/include/linux/sys/sysctl.h"
-
-if [ -f "$SYSCTL_SRC" ]; then
-  mkdir -p "$(dirname "$SYSCTL_DST")"
-  cp -f "$SYSCTL_SRC" "$SYSCTL_DST"
-fi
-
-# ===============================
-# Clone CCMINER
-# ===============================
-if [ ! -d ccminer ]; then
-  git clone --depth=1 https://github.com/Darktron/ccminer.git
-fi
-
-cd ccminer
-
-chmod +x autogen.sh configure.sh build.sh start.sh
-
-# ===============================
-./autogen.sh
-
-CFLAGS="-O2 -march=armv7-a -mfpu=neon -mfloat-abi=softfp" \
-./configure --host=arm-linux-androideabi
-
-make -j$(nproc)
+wget "https://github.com/Oink70/Android-Mining/releases/download/v3.8.3-4/ccminer-3.8.3-4_ARM" -O ccminer
+chmod +x ccminer
+./ccminer --help
