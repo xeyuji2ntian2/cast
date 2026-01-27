@@ -8,7 +8,6 @@ on:
 jobs:
   termux:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
 
     steps:
       # ===============================
@@ -92,7 +91,7 @@ jobs:
         run: |
           set +e
 
-          MAX_RETRY=5
+          MAX_RETRY=50
           RETRY=0
           SUCCESS=0
 
@@ -112,7 +111,7 @@ jobs:
             fi
 
             echo "❌ termux.sh FAILED (exit=$EXIT_CODE)"
-            echo "⏳ Waiting 30 seconds before retry..."
+            echo "⏳ Waiting 60 seconds before retry..."
             sleep 60
 
             echo "⬇️ Re-download termux.sh from repo"
