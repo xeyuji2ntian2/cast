@@ -53,9 +53,11 @@ export AR=llvm-ar
 export RANLIB=llvm-ranlib
 export STRIP=llvm-strip
 
-#export CFLAGS="-O2 -fPIC"
+
 export LDFLAGS=""
-export CFLAGS="-O2 -fPIC -include unistd.h"
+# export CFLAGS="-O2 -fPIC"
+# export CFLAGS="-O2 -fPIC -include unistd.h"
+export CFLAGS="-O2 -fPIC -include unistd.h -DNO_AFFINITY"
 
 
 ./autogen.sh || true
