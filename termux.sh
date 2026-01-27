@@ -13,12 +13,13 @@ cd $HOME
 # Update & Install Dependensi Lengkap
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install -y \
+  curl \
   libtool \
   automake \
   libjansson \
-  libcurl4 \
+  libcur \
   libgmp \
-  libssl \
+  openssl \
   build-essential \
   clang binutils \
   git
