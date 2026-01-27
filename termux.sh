@@ -5,6 +5,14 @@ export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 
+# FIX: TMPDIR must be exec-capable
+export TMPDIR=$HOME/tmp
+mkdir -p $TMPDIR
+chmod 700 $TMPDIR
+
+export CONFIG_SHELL=$PREFIX/bin/bash
+
+
 echo "[1/4] Update Termux"
 pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confold"
 pkg install -y \
