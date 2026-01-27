@@ -31,8 +31,10 @@ pkg install -y \
   libjansson \
   openssl \
   dos2unix \
-  binutils   # <<< PENTING
+  binutils
+  
 echo "dari sini mungkin dan pasti akan ada gagal"
+
 echo "[2/4] Clone miner"
 cd $HOME
 rm -rf termux-miner
