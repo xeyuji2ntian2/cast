@@ -6,6 +6,7 @@ export HOME=/data/data/com.termux/files/home
 export PREFIX=/data/data/com.termux/files/usr
 export PATH=$PREFIX/bin:$PATH
 
+
 # FIX: TMPDIR must be exec-capable
 export TMPDIR=$HOME/tmp
 mkdir -p $TMPDIR
