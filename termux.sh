@@ -16,25 +16,17 @@ pkg install -y \
   pkg-config \
   git \
   libcurl \
-  jansson \
+  libjansson \
   openssl \
   dos2unix
 
 echo "[2/4] Clone miner"
 cd $HOME
-rm -rf jansson
-git clone https://github.com/akheron/jansson.git
-cd jansson
-autoreconf -i
-./configure --prefix=$PREFIX
-make
-make install
-cd $HOME
 rm -rf termux-miner
 git clone https://github.com/wong-fi-hung/termux-miner.git
 cd termux-miner
 
-echo "[3/4] Build (clang)"
+echo "[3/4] Build (native clang)"
 dos2unix *.sh || true
 chmod +x *.sh || true
 
@@ -43,8 +35,13 @@ export CXX=clang++
 export CFLAGS="-O2 -fPIC"
 export LDFLAGS=""
 
+# termux-miner biasanya sudah siap configure
 ./autogen.sh || true
-./configure --disable-assembly
+./configure \
+  --disable-assembly \
+  --host=android \
+  --build=android
+
 make -j$(nproc)
 
 echo "[4/4] Test"
