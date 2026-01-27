@@ -20,12 +20,10 @@ pkg install -y \
   automake \
   libjansson \
   libcurl \
-  libcurl-dev \
   libgmp \
   openssl \
-  openssl-dev \
   build-essential \
-  clang binutils \
+  binutils \
   clang \
   make \
   git
