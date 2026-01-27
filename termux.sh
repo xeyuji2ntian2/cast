@@ -36,7 +36,7 @@ pkg install -y \
 echo -e "\e[1;4;32m START BUILD cpuminer-opt \e[0m"
 sleep 10
 
-rm -f cpuminer-opt
+rm -rf cpuminer-opt
 git clone https://github.com/JayDDee/cpuminer-opt.git
 cd ~/cpuminer-opt
 make clean   # if Makefile exists
