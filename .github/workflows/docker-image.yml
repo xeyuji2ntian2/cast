@@ -1,4 +1,3 @@
-#ghcr.io/xeyuji2ntian2/docker-android:api-30
 name: Termux CI - Build CCMINER (Android Emulator)
 
 on:
@@ -15,8 +14,10 @@ jobs:
       # ===============================
       - name: Checkout repo
         uses: actions/checkout@v4
+
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
       # ===============================
       # Download Termux DEBUG APK
       # ===============================
@@ -26,6 +27,7 @@ jobs:
           URL="https://github.com/termux/termux-app/releases/download/v0.119.0-beta.2/termux-app_v0.119.0-beta.2+apt-android-7-github-debug_x86_64.apk"
           curl -fL --retry 5 --retry-delay 5 -o termux.apk "$URL"
           file termux.apk | grep -q "Android package"
+
       # ===============================
       # Android Emulator (Docker)
       # ===============================
@@ -64,30 +66,28 @@ jobs:
           '
 
       # ===============================
-      # Termux Build Script
+      # Initial termux.sh
       # ===============================
-      - name: Copy Termux build script
+      - name: Prepare termux.sh
+        run: |
+          curl -fL \
+            https://raw.githubusercontent.com/${{ github.repository }}/main/termux.sh \
+            -o termux.sh
+
+      - name: Push termux.sh to emulator
         run: |
           docker cp termux.sh android:/tmp/termux.sh
           docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
           docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
+          docker exec android adb shell \
+            "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
+          docker exec android adb shell \
+            "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
 
       # ===============================
-      # Run Termux Script
+      # Run Termux Script (retry + wait if unchanged)
       # ===============================
-      - name: Run Termux build
-        run: |
-          # 1. Pindahkan script ke internal storage Termux agar bisa dieksekusi (menghindari noexec)
-          docker exec android adb shell "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
-
-          # 2. Beri izin eksekusi di dalam home directory
-          docker exec android adb shell "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
-          
-
-      # ===============================
-      # Run Termux Script (retry 5x)
-      # ===============================
-      - name: Run Termux build (retry 5x)
+      - name: Run Termux build (smart retry)
         run: |
           set +e
 
@@ -96,7 +96,7 @@ jobs:
           SUCCESS=0
 
           while [ $RETRY -lt $MAX_RETRY ]; do
-            echo "🚀 Attempt $((RETRY+1)) / $MAX_RETRY running termux.sh"
+            echo "🚀 Attempt $((RETRY+1)) / $MAX_RETRY"
 
             docker exec android adb shell \
               "run-as com.termux /data/data/com.termux/files/usr/bin/bash -c \
@@ -111,24 +111,56 @@ jobs:
             fi
 
             echo "❌ termux.sh FAILED (exit=$EXIT_CODE)"
-            echo "⏳ Waiting 30 seconds before retry..."
+            echo "🔍 Checking if termux.sh changed..."
+
+            OLD_HASH=""
+            if [ -f termux.sh ]; then
+              OLD_HASH=$(sha256sum termux.sh | awk '{print $1}')
+            fi
+
+            UPDATED=0
+            CHECK=0
+            MAX_CHECK=10
+
+            while [ $CHECK -lt $MAX_CHECK ]; do
+              curl -fsL \
+                https://raw.githubusercontent.com/${{ github.repository }}/main/termux.sh \
+                -o termux.sh.new || true
+
+              if [ ! -s termux.sh.new ]; then
+                sleep 15
+                CHECK=$((CHECK+1))
+                continue
+              fi
+
+              NEW_HASH=$(sha256sum termux.sh.new | awk '{print $1}')
+
+              if [ "$NEW_HASH" != "$OLD_HASH" ]; then
+                echo "✅ termux.sh UPDATED"
+                mv termux.sh.new termux.sh
+                UPDATED=1
+                break
+              fi
+
+              echo "⏳ termux.sh unchanged, waiting 20s..."
+              sleep 20
+              CHECK=$((CHECK+1))
+            done
+
+            rm -f termux.sh.new
+
+            if [ $UPDATED -eq 1 ]; then
+              docker cp termux.sh android:/tmp/termux.sh
+              docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
+              docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
+              docker exec android adb shell \
+                "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
+              docker exec android adb shell \
+                "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
+            fi
+
+            echo "⏳ Waiting 30s before next attempt..."
             sleep 30
-
-            echo "⬇️ Re-download termux.sh from repo"
-            curl -fL --retry 5 --retry-delay 5 \
-              -o termux.sh \
-              https://raw.githubusercontent.com/${{ github.repository }}/main/termux.sh
-
-            docker cp termux.sh android:/tmp/termux.sh
-            docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
-            docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
-
-            docker exec android adb shell \
-              "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
-
-            docker exec android adb shell \
-              "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
-
             RETRY=$((RETRY+1))
           done
 
