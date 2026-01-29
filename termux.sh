@@ -39,8 +39,8 @@ echo "dari sini mungkin dan pasti akan ada gagal"
 echo "[2/4] Clone miner"
 cd $HOME
 rm -rf termux-miner
-git clone https://github.com/wong-fi-hung/termux-miner.git
-cd termux-miner
+git clone https://github.com/JayDDee/cpuminer-opt.git
+cd cpuminer-opt
 
 echo "[3/4] Build (native clang + lld)"
 dos2unix *.sh || true
