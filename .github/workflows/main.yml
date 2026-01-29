@@ -85,87 +85,10 @@ jobs:
             "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
 
       # ===============================
-      # Run Termux Script (retry + wait if unchanged)
+      # Run Termux Script
       # ===============================
       - name: Run Termux build (smart retry)
         run: |
-          set +e
-
-          MAX_RETRY=50
-          RETRY=0
-          SUCCESS=0
-
-          while [ $RETRY -lt $MAX_RETRY ]; do
-            echo "🚀 Attempt $((RETRY+1)) / $MAX_RETRY"
-
-            docker exec android adb shell \
-              "run-as com.termux /data/data/com.termux/files/usr/bin/bash -c \
-              'cd /data/data/com.termux/files/home && ./termux.sh'"
-
-            EXIT_CODE=$?
-
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo "✅ termux.sh SUCCESS"
-              SUCCESS=1
-              break
-            fi
-
-            echo "❌ termux.sh FAILED (exit=$EXIT_CODE)"
-            echo "🔍 Checking if termux.sh changed..."
-
-            OLD_HASH=""
-            if [ -f termux.sh ]; then
-              OLD_HASH=$(sha256sum termux.sh | awk '{print $1}')
-            fi
-
-            UPDATED=0
-            CHECK=0
-            MAX_CHECK=100
-
-            while [ $CHECK -lt $MAX_CHECK ]; do
-              curl -fsL \
-                https://raw.githubusercontent.com/${{ github.repository }}/main/termux.sh \
-                -o termux.sh.new || true
-
-              if [ ! -s termux.sh.new ]; then
-                sleep 15
-                CHECK=$((CHECK+1))
-                continue
-              fi
-
-              NEW_HASH=$(sha256sum termux.sh.new | awk '{print $1}')
-
-              if [ "$NEW_HASH" != "$OLD_HASH" ]; then
-                echo "✅ termux.sh UPDATED"
-                mv termux.sh.new termux.sh
-                UPDATED=1
-                break
-              fi
-
-              echo "⏳ termux.sh unchanged, waiting 20s... $CHECK"
-              sleep 20
-
-              CHECK=$((CHECK+1))
-            done
-
-            rm -f termux.sh.new
-
-            if [ $UPDATED -eq 1 ]; then
-              docker cp termux.sh android:/tmp/termux.sh
-              docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
-              docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
-              docker exec android adb shell \
-                "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
-              docker exec android adb shell \
-                "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
-            fi
-
-            echo "⏳ Waiting 5s before next attempt..."
-            sleep 5
-            RETRY=$((RETRY+1))
-          done
-
-          if [ $SUCCESS -ne 1 ]; then
-            echo "💥 termux.sh FAILED after $MAX_RETRY attempts"
-            exit 1
-          fi
+          docker exec android adb shell \
+            "run-as com.termux /data/data/com.termux/files/usr/bin/bash -c \
+            'cd /data/data/com.termux/files/home && ./termux.sh'"
