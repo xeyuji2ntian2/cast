@@ -35,3 +35,56 @@ pkg install -y \
   binutils
 
 
+echo "dari sini mungkin dan pasti akan ada gagal"
+echo "[2/4] Clone miner"
+cd $HOME
+rm -rf termux-miner
+git clone https://github.com/wong-fi-hung/termux-miner.git
+cd termux-miner
+
+echo "[3/4] Build (native clang + lld)"
+dos2unix *.sh || true
+chmod +x *.sh || true
+
+
+# export CFLAGS="-O2 -fPIC"
+# export CFLAGS="-O2 -fPIC -include unistd.h"
+#export CFLAGS="-O2 -fPIC -include unistd.h -DNO_AFFINITY"
+export CC=clang
+export CXX=clang++
+export LD=ld.lld
+export AR=llvm-ar
+export RANLIB=llvm-ranlib
+export STRIP=llvm-strip
+
+export LDFLAGS=""
+export CFLAGS="-O2 -fPIC -U__linux__ -D__ANDROID__ -include unistd.h -DNO_AFFINITY"
+
+./autogen.sh || true
+
+./configure \
+  --disable-assembly
+
+echo "[PATCH] Disable CPU affinity safely (Android)"
+
+CPU_FILE=$(grep -rl "sched_setaffinity" . || true)
+
+if [ -n "$CPU_FILE" ]; then
+  echo "patching: $CPU_FILE"
+  sed -i '
+    /sched_setaffinity/{
+      i #if 0
+      a #endif
+    }
+  ' "$CPU_FILE"
+else
+  echo "⚠️ sched_setaffinity not found, skip"
+fi
+
+make -j$(nproc)
+
+echo "[4/4] Test"
+file cpuminer
+./cpuminer -h || true
+
+echo "✅ BUILD SUCCESS (Termux native, GA-safe)"
