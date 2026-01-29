@@ -81,13 +81,32 @@ jobs:
           export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
           export STRIP=$TOOLCHAIN/bin/llvm-strip
 
+          export CPPFLAGS="-I$PWD/openssl/install/include"
+          export LDFLAGS="-L$PWD/openssl/install/lib -pie"
+
           ./configure \
             --host=$TARGET \
             --prefix=/data/data/com.termux/files/usr \
-            --without-openssl \
-            --disable-ssl \
-            CFLAGS="-O2 -fPIE" \
-            LDFLAGS="-pie"
+            CFLAGS="-O2 -fPIE"
+      # ===============================
+      # Build OpenSSL for Android
+      # ===============================
+      - name: Build OpenSSL (Android arm64)
+        run: |
+          git clone https://github.com/openssl/openssl.git
+          cd openssl
+
+          export ANDROID_NDK_ROOT=$NDK
+          export PATH=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
+
+          ./Configure android-arm64 \
+            -D__ANDROID_API__=21 \
+            no-shared \
+            no-tests \
+            --prefix=$PWD/install
+
+          make -j$(nproc)
+          make install_sw
 
       # ===============================
       # Build
