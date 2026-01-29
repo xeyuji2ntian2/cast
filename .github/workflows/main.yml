@@ -24,14 +24,8 @@ jobs:
         run: |
           sudo apt update -qq
           sudo apt install -y -qq \
-            git \
-            make \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            wget \
-            unzip
+            git make autoconf automake libtool pkg-config \
+            wget unzip
 
       # ===============================
       # Cache Android NDK
@@ -63,33 +57,7 @@ jobs:
           echo "API=21" >> $GITHUB_ENV
 
       # ===============================
-      # Autogen
-      # ===============================
-      - name: Autogen
-        run: |
-          chmod +x autogen.sh || true
-          ./autogen.sh || autoreconf -fi
-
-      # ===============================
-      # Configure (NO OpenSSL)
-      # ===============================
-      - name: Configure
-        run: |
-          export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
-          export CXX=$TOOLCHAIN/bin/${TARGET}${API}-clang++
-          export AR=$TOOLCHAIN/bin/llvm-ar
-          export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
-          export STRIP=$TOOLCHAIN/bin/llvm-strip
-
-          export CPPFLAGS="-I$PWD/openssl/install/include"
-          export LDFLAGS="-L$PWD/openssl/install/lib -pie"
-
-          ./configure \
-            --host=$TARGET \
-            --prefix=/data/data/com.termux/files/usr \
-            CFLAGS="-O2 -fPIE"
-      # ===============================
-      # Build OpenSSL for Android
+      # Build OpenSSL for Android (FIRST!)
       # ===============================
       - name: Build OpenSSL (Android arm64)
         run: |
@@ -107,6 +75,33 @@ jobs:
 
           make -j$(nproc)
           make install_sw
+
+      # ===============================
+      # Autogen cpuminer
+      # ===============================
+      - name: Autogen
+        run: |
+          chmod +x autogen.sh || true
+          ./autogen.sh || autoreconf -fi
+
+      # ===============================
+      # Configure cpuminer (NOW OpenSSL EXISTS)
+      # ===============================
+      - name: Configure
+        run: |
+          export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
+          export CXX=$TOOLCHAIN/bin/${TARGET}${API}-clang++
+          export AR=$TOOLCHAIN/bin/llvm-ar
+          export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+          export STRIP=$TOOLCHAIN/bin/llvm-strip
+
+          export CPPFLAGS="-I$PWD/openssl/install/include"
+          export LDFLAGS="-L$PWD/openssl/install/lib -pie"
+
+          ./configure \
+            --host=$TARGET \
+            --prefix=/data/data/com.termux/files/usr \
+            CFLAGS="-O2 -fPIE"
 
       # ===============================
       # Build
@@ -127,8 +122,8 @@ jobs:
       # ===============================
       - name: Verify binary
         run: |
-          file cpuminer || true
-          readelf -l cpuminer | grep interpreter || true
+          file cpuminer
+          readelf -l cpuminer | grep interpreter
 
       # ===============================
       # Upload artifact
