@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
+
 set -e
 
 echo "scrip termux.sh di gihub action -> docker android emulator -> termux"
