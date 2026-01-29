@@ -1,4 +1,4 @@
-name: Build cpuminer for Termux (Android)
+name: Build cpuminer for Termux (Android arm64)
 
 on:
   workflow_dispatch:
@@ -9,61 +9,113 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout source
-      uses: actions/checkout@v4
-      with:
-        repository: wong-fi-hung/termux-miner
+      # ===============================
+      # Checkout source
+      # ===============================
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          repository: wong-fi-hung/termux-miner
 
-    - name: Install dependencies
-      run: |
-        sudo apt update -qq
-        sudo apt install -y -qq \
-          git make autoconf automake libtool pkg-config \
-          wget unzip
+      # ===============================
+      # System deps
+      # ===============================
+      - name: Install build dependencies
+        run: |
+          sudo apt update -qq
+          sudo apt install -y -qq \
+            git \
+            make \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            wget \
+            unzip
 
-    - name: Download Android NDK
-      run: |
-        wget -q https://dl.google.com/android/repository/android-ndk-r26d-linux.zip
-        unzip -q android-ndk-r26d-linux.zip
-        echo "NDK=$PWD/android-ndk-r26d" >> $GITHUB_ENV
+      # ===============================
+      # Cache Android NDK
+      # ===============================
+      - name: Cache Android NDK
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: android-ndk-r26d
+          key: ndk-r26d-${{ runner.os }}
 
-    - name: Set toolchain env
-      run: |
-        echo "TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64" >> $GITHUB_ENV
-        echo "TARGET=aarch64-linux-android" >> $GITHUB_ENV
-        echo "API=21" >> $GITHUB_ENV
+      # ===============================
+      # Download NDK (cache miss only)
+      # ===============================
+      - name: Download Android NDK
+        if: steps.cache-ndk.outputs.cache-hit != 'true'
+        run: |
+          wget -q https://dl.google.com/android/repository/android-ndk-r26d-linux.zip
+          unzip -q android-ndk-r26d-linux.zip
 
-    - name: Autogen
-      run: |
-        chmod +x autogen.sh || true
-        ./autogen.sh || autoreconf -fi
+      # ===============================
+      # Set NDK env
+      # ===============================
+      - name: Set NDK environment
+        run: |
+          echo "NDK=$PWD/android-ndk-r26d" >> $GITHUB_ENV
+          echo "TOOLCHAIN=$PWD/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64" >> $GITHUB_ENV
+          echo "TARGET=aarch64-linux-android" >> $GITHUB_ENV
+          echo "API=21" >> $GITHUB_ENV
 
-    - name: Configure (Android / Termux)
-      run: |
-        export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
-        export CXX=$TOOLCHAIN/bin/${TARGET}${API}-clang++
-        export AR=$TOOLCHAIN/bin/llvm-ar
-        export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
-        export STRIP=$TOOLCHAIN/bin/llvm-strip
+      # ===============================
+      # Autogen
+      # ===============================
+      - name: Autogen
+        run: |
+          chmod +x autogen.sh || true
+          ./autogen.sh || autoreconf -fi
 
-        ./configure \
-          --host=$TARGET \
-          --prefix=/data/data/com.termux/files/usr \
-          --without-openssl \
-          --disable-ssl \
-          CFLAGS="-O2 -fPIE" \
-          LDFLAGS="-pie"
- 
-    - name: Build
-      run: |
-        make -j$(nproc)
+      # ===============================
+      # Configure (NO OpenSSL)
+      # ===============================
+      - name: Configure
+        run: |
+          export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
+          export CXX=$TOOLCHAIN/bin/${TARGET}${API}-clang++
+          export AR=$TOOLCHAIN/bin/llvm-ar
+          export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+          export STRIP=$TOOLCHAIN/bin/llvm-strip
 
-    - name: Strip binary
-      run: |
-        $TOOLCHAIN/bin/llvm-strip cpuminer || true
+          ./configure \
+            --host=$TARGET \
+            --prefix=/data/data/com.termux/files/usr \
+            --without-openssl \
+            --disable-ssl \
+            CFLAGS="-O2 -fPIE" \
+            LDFLAGS="-pie"
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: cpuminer-termux-arm64
-        path: cpuminer
+      # ===============================
+      # Build
+      # ===============================
+      - name: Build
+        run: |
+          make -j$(nproc)
+
+      # ===============================
+      # Strip binary
+      # ===============================
+      - name: Strip binary
+        run: |
+          llvm-strip cpuminer || true
+
+      # ===============================
+      # Verify binary
+      # ===============================
+      - name: Verify binary
+        run: |
+          file cpuminer || true
+          readelf -l cpuminer | grep interpreter || true
+
+      # ===============================
+      # Upload artifact
+      # ===============================
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpuminer-termux-arm64
+          path: cpuminer
