@@ -49,9 +49,11 @@ jobs:
         ./configure \
           --host=$TARGET \
           --prefix=/data/data/com.termux/files/usr \
+          --without-openssl \
+          --disable-ssl \
           CFLAGS="-O2 -fPIE" \
           LDFLAGS="-pie"
-
+ 
     - name: Build
       run: |
         make -j$(nproc)
