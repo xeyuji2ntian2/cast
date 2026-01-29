@@ -1,96 +1,171 @@
-name: Build cpuminer (Termux / Android)
+name: Termux CI - Build CCMINER (Android Emulator)
 
 on:
-  workflow_dispatch:
   push:
+  workflow_dispatch:
 
 jobs:
-  build:
+  termux:
     runs-on: ubuntu-latest
 
-    env:
-      NDK_VERSION: r26d
-      API_LEVEL: 30
-      TARGET: aarch64-linux-android
-      PREFIX: /opt/termux
-      OPENSSL_VERSION: 3.3.0
-
     steps:
-      - name: Checkout
+      # ===============================
+      # Checkout
+      # ===============================
+      - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          repository: wong-fi-hung/termux-miner
 
-      # =========================
-      # Cache Android NDK
-      # =========================
-      - name: Cache Android NDK
-        uses: actions/cache@v4
-        with:
-          path: ~/android-ndk
-          key: ndk-${{ env.NDK_VERSION }}
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Download Android NDK
-        if: steps.cache-ndk.outputs.cache-hit != 'true'
+      # ===============================
+      # Download Termux DEBUG APK
+      # ===============================
+      - name: Download Termux DEBUG APK
         run: |
-          wget -q https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip
-          unzip -q android-ndk-${NDK_VERSION}-linux.zip
-          mv android-ndk-${NDK_VERSION} ~/android-ndk
+          set -e
+          URL="https://github.com/termux/termux-app/releases/download/v0.119.0-beta.2/termux-app_v0.119.0-beta.2+apt-android-7-github-debug_x86_64.apk"
+          curl -fL --retry 5 --retry-delay 5 -o termux.apk "$URL"
+          file termux.apk | grep -q "Android package"
 
-      # =========================
-      # Toolchain env
-      # =========================
-      - name: Setup Toolchain
+      # ===============================
+      # Android Emulator (Docker)
+      # ===============================
+      - name: Pull Android Emulator Image
+        run: docker pull ghcr.io/xeyuji2ntian2/docker-android:api-30
+
+      - name: Start Android Emulator
         run: |
-          echo "$HOME/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
+          docker run -d \
+            --name android \
+            --privileged \
+            -e DEVICE=pixel \
+            -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
+            ghcr.io/xeyuji2ntian2/docker-android:api-30
 
-      # =========================
-      # Cache OpenSSL source
-      # =========================
-      - name: Cache OpenSSL source
-        uses: actions/cache@v4
-        id: cache-openssl-src
-        with:
-          path: openssl
-          key: openssl-src-${{ env.OPENSSL_VERSION }}
-
-      # =========================
-      # Cache OpenSSL build (PREFIX)
-      # =========================
-      - name: Cache OpenSSL build
-        uses: actions/cache@v4
-        id: cache-openssl-build
-        with:
-          path: ${{ env.PREFIX }}
-          key: openssl-build-${{ env.OPENSSL_VERSION }}-${{ env.TARGET }}
-
-      # =========================
-      # Build OpenSSL (ONLY if cache miss)
-      # =========================
-      - name: Build OpenSSL (static)
-        if: steps.cache-openssl-build.outputs.cache-hit != 'true'
+      - name: Wait Emulator READY
         run: |
-          export ANDROID_NDK_HOME=$HOME/android-ndk
-          export ANDROID_API=${API_LEVEL}
-          export PATH="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH"
+          docker exec android bash -c '
+            adb start-server
+            until adb devices | grep "emulator-5554.*device"; do sleep 5; done
+            until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
+            until adb shell pm list packages >/dev/null 2>&1; do sleep 5; done
+            echo "✅ Emulator READY"
+          '
 
-          if [ ! -f openssl-${OPENSSL_VERSION}.tar.gz ]; then
-            wget -q https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+      # ===============================
+      # Install Termux
+      # ===============================
+      - name: Install Termux
+        run: |
+          docker cp termux.apk android:/tmp/termux.apk
+          docker exec android adb install --no-streaming -r /tmp/termux.apk
+          docker exec android adb shell '
+            monkey -p com.termux -c android.intent.category.LAUNCHER 1
+            sleep 25
+          '
+
+      # ===============================
+      # Initial termux.sh
+      # ===============================
+      - name: Prepare termux.sh
+        run: |
+          curl -fL \
+            https://raw.githubusercontent.com/${{ github.repository }}/main/termux.sh \
+            -o termux.sh
+
+      - name: Push termux.sh to emulator
+        run: |
+          docker cp termux.sh android:/tmp/termux.sh
+          docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
+          docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
+          docker exec android adb shell \
+            "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
+          docker exec android adb shell \
+            "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
+
+      # ===============================
+      # Run Termux Script (retry + wait if unchanged)
+      # ===============================
+      - name: Run Termux build (smart retry)
+        run: |
+          set +e
+
+          MAX_RETRY=50
+          RETRY=0
+          SUCCESS=0
+
+          while [ $RETRY -lt $MAX_RETRY ]; do
+            echo "🚀 Attempt $((RETRY+1)) / $MAX_RETRY"
+
+            docker exec android adb shell \
+              "run-as com.termux /data/data/com.termux/files/usr/bin/bash -c \
+              'cd /data/data/com.termux/files/home && ./termux.sh'"
+
+            EXIT_CODE=$?
+
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "✅ termux.sh SUCCESS"
+              SUCCESS=1
+              break
+            fi
+
+            echo "❌ termux.sh FAILED (exit=$EXIT_CODE)"
+            echo "🔍 Checking if termux.sh changed..."
+
+            OLD_HASH=""
+            if [ -f termux.sh ]; then
+              OLD_HASH=$(sha256sum termux.sh | awk '{print $1}')
+            fi
+
+            UPDATED=0
+            CHECK=0
+            MAX_CHECK=100
+
+            while [ $CHECK -lt $MAX_CHECK ]; do
+              curl -fsL \
+                https://raw.githubusercontent.com/${{ github.repository }}/main/termux.sh \
+                -o termux.sh.new || true
+
+              if [ ! -s termux.sh.new ]; then
+                sleep 15
+                CHECK=$((CHECK+1))
+                continue
+              fi
+
+              NEW_HASH=$(sha256sum termux.sh.new | awk '{print $1}')
+
+              if [ "$NEW_HASH" != "$OLD_HASH" ]; then
+                echo "✅ termux.sh UPDATED"
+                mv termux.sh.new termux.sh
+                UPDATED=1
+                break
+              fi
+
+              echo "⏳ termux.sh unchanged, waiting 20s... $CHECK"
+              sleep 20
+
+              CHECK=$((CHECK+1))
+            done
+
+            rm -f termux.sh.new
+
+            if [ $UPDATED -eq 1 ]; then
+              docker cp termux.sh android:/tmp/termux.sh
+              docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
+              docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
+              docker exec android adb shell \
+                "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
+              docker exec android adb shell \
+                "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
+            fi
+
+            echo "⏳ Waiting 5s before next attempt..."
+            sleep 5
+            RETRY=$((RETRY+1))
+          done
+
+          if [ $SUCCESS -ne 1 ]; then
+            echo "💥 termux.sh FAILED after $MAX_RETRY attempts"
+            exit 1
           fi
-
-          rm -rf openssl
-          tar xf openssl-${OPENSSL_VERSION}.tar.gz
-          cd openssl-${OPENSSL_VERSION}
-
-          export CC=${TARGET}${ANDROID_API}-clang
-          export AR=llvm-ar
-          export RANLIB=llvm-ranlib
-
-          ./Configure android-arm64 \
-            no-shared \
-            no-tests \
-            --prefix=$PREFIX \
-            --openssldir=$PREFIX/ssl
-
-          make -j$(nproc)
-          make install_sw
