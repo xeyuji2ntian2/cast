@@ -61,3 +61,61 @@ jobs:
           echo "TOOLCHAIN=$PWD/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64" >> $GITHUB_ENV
           echo "TARGET=aarch64-linux-android" >> $GITHUB_ENV
           echo "API=21" >> $GITHUB_ENV
+
+      # ===============================
+      # Autogen
+      # ===============================
+      - name: Autogen
+        run: |
+          chmod +x autogen.sh || true
+          ./autogen.sh || autoreconf -fi
+
+      # ===============================
+      # Configure (NO OpenSSL)
+      # ===============================
+      - name: Configure
+        run: |
+          export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
+          export CXX=$TOOLCHAIN/bin/${TARGET}${API}-clang++
+          export AR=$TOOLCHAIN/bin/llvm-ar
+          export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+          export STRIP=$TOOLCHAIN/bin/llvm-strip
+
+          ./configure \
+            --host=$TARGET \
+            --prefix=/data/data/com.termux/files/usr \
+            --without-openssl \
+            --disable-ssl \
+            CFLAGS="-O2 -fPIE" \
+            LDFLAGS="-pie"
+
+      # ===============================
+      # Build
+      # ===============================
+      - name: Build
+        run: |
+          make -j$(nproc)
+
+      # ===============================
+      # Strip binary
+      # ===============================
+      - name: Strip binary
+        run: |
+          llvm-strip cpuminer || true
+
+      # ===============================
+      # Verify binary
+      # ===============================
+      - name: Verify binary
+        run: |
+          file cpuminer || true
+          readelf -l cpuminer | grep interpreter || true
+
+      # ===============================
+      # Upload artifact
+      # ===============================
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpuminer-termux-arm64
+          path: cpuminer
