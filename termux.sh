@@ -65,20 +65,23 @@ export CFLAGS="-O2 -fPIC -U__linux__ -D__ANDROID__ -include unistd.h -DNO_AFFINI
 ./configure \
   --disable-assembly
 
-echo "[PATCH] Disable CPU affinity safely (Android)"
+echo "[PATCH] Disable CPU affinity (hard kill for Android)"
 
-CPU_FILE=$(grep -rl "sched_setaffinity" . || true)
+CPU_FILE="cpu-miner.c"
 
-if [ -n "$CPU_FILE" ]; then
-  echo "patching: $CPU_FILE"
+if grep -q "cpu_set_t" "$CPU_FILE"; then
+  echo "patching affinity block in $CPU_FILE"
   sed -i '
-    /sched_setaffinity/{
-      i #if 0
+    /cpu_set_t/{
+      i #if 0 /* ANDROID: disable cpu affinity */
+      :a
+      n
+      /}/!ba
       a #endif
     }
   ' "$CPU_FILE"
 else
-  echo "⚠️ sched_setaffinity not found, skip"
+  echo "⚠️ cpu_set_t not found, skip"
 fi
 
 make -j$(nproc)
