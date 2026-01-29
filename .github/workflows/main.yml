@@ -13,7 +13,7 @@ jobs:
       API_LEVEL: 30
       TARGET: aarch64-linux-android
       PREFIX: /opt/termux
-      OPENSSL_VERSION: openssl-3.3.0
+      OPENSSL_VERSION: 3.3.0
 
     steps:
       - name: Checkout
@@ -70,15 +70,27 @@ jobs:
       - name: Build OpenSSL (static)
         if: steps.cache-openssl-build.outputs.cache-hit != 'true'
         run: |
-          if [ ! -d openssl ]; then
-            git clone --branch ${OPENSSL_VERSION} --depth 1 https://github.com/openssl/openssl.git
+          export ANDROID_NDK_HOME=$HOME/android-ndk
+          export ANDROID_API=${API_LEVEL}
+          export PATH="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH"
+
+          if [ ! -f openssl-${OPENSSL_VERSION}.tar.gz ]; then
+            wget -q https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
           fi
 
-          cd openssl
-          ./Configure android-arm64 no-shared no-tests \
+          rm -rf openssl
+          tar xf openssl-${OPENSSL_VERSION}.tar.gz
+          cd openssl-${OPENSSL_VERSION}
+
+          export CC=${TARGET}${ANDROID_API}-clang
+          export AR=llvm-ar
+          export RANLIB=llvm-ranlib
+
+          ./Configure android-arm64 \
+            no-shared \
+            no-tests \
             --prefix=$PREFIX \
             --openssldir=$PREFIX/ssl
 
           make -j$(nproc)
           make install_sw
-
