@@ -1,0 +1,67 @@
+name: Build cpuminer for Termux (Android)
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+      with:
+        repository: wong-fi-hung/termux-miner
+
+    - name: Install dependencies
+      run: |
+        sudo apt update -qq
+        sudo apt install -y -qq \
+          git make autoconf automake libtool pkg-config \
+          wget unzip
+
+    - name: Download Android NDK
+      run: |
+        wget -q https://dl.google.com/android/repository/android-ndk-r26d-linux.zip
+        unzip -q android-ndk-r26d-linux.zip
+        echo "NDK=$PWD/android-ndk-r26d" >> $GITHUB_ENV
+
+    - name: Set toolchain env
+      run: |
+        echo "TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64" >> $GITHUB_ENV
+        echo "TARGET=aarch64-linux-android" >> $GITHUB_ENV
+        echo "API=21" >> $GITHUB_ENV
+
+    - name: Autogen
+      run: |
+        chmod +x autogen.sh || true
+        ./autogen.sh || autoreconf -fi
+
+    - name: Configure (Android / Termux)
+      run: |
+        export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
+        export CXX=$TOOLCHAIN/bin/${TARGET}${API}-clang++
+        export AR=$TOOLCHAIN/bin/llvm-ar
+        export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+        export STRIP=$TOOLCHAIN/bin/llvm-strip
+
+        ./configure \
+          --host=$TARGET \
+          --prefix=/data/data/com.termux/files/usr \
+          CFLAGS="-O2 -fPIE" \
+          LDFLAGS="-pie"
+
+    - name: Build
+      run: |
+        make -j$(nproc)
+
+    - name: Strip binary
+      run: |
+        $TOOLCHAIN/bin/llvm-strip cpuminer || true
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cpuminer-termux-arm64
+        path: cpuminer
