@@ -1,94 +1,35 @@
-name: Termux CI - Build CCMINER (Android Emulator)
+name: CI
 
 on:
-  push:
-  workflow_dispatch:
+  push: 
 
 jobs:
-  termux:
-    #runs-on: ubuntu-latest
-    runs-on: namespace-profile-default
+  build:
+    runs-on: ubuntu-latest
+
     steps:
-      # ===============================
-      # Checkout
-      # ===============================
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
-      - name: Login to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      # ===============================
-      # Download Termux DEBUG APK
-      # ===============================
-      - name: Download Termux DEBUG APK
+      - name: Hello READE
         run: |
-          set -e
-          URL="https://github.com/termux/termux-app/releases/download/v0.119.0-beta.2/termux-app_v0.119.0-beta.2+apt-android-7-github-debug_x86_64.apk"
-          #curl -fL --retry 5 --retry-delay 5 -o termux.apk "$URL"
-          #file termux.apk | grep -q "Android package"
-
-      # ===============================
-      # Android Emulator (Docker)
-      # ===============================
-      - name: Pull Android Emulator Image
-        run: docker pull ghcr.io/xeyuji2ntian2/docker-android:api-30
-
-      - name: Start Android Emulator
+          
+      - name: Commit changes
         run: |
-          docker run -d \
-            --name android \
-            --privileged \
-            -e DEVICE=pixel \
-            -e EMULATOR_ARGS="-no-window -no-audio -no-boot-anim" \
-            ghcr.io/xeyuji2ntian2/docker-android:api-30
+          for INSER in {1..20}; do
+            sleep 5
+            HOURS=$(date +%H%M)
+            echo $HOURS $INSER > README.md
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
 
-      - name: Wait Emulator READY
-        run: |
-          docker exec android bash -c '
-            adb start-server
-            until adb devices | grep "emulator-5554.*device"; do sleep 5; done
-            until adb shell getprop sys.boot_completed | grep -m 1 1; do sleep 5; done
-            until adb shell pm list packages >/dev/null 2>&1; do sleep 5; done
-            echo "✅ Emulator READY"
-          '
-
-      # ===============================
-      # Install Termux
-      # ===============================
-      - name: Install Termux
-        run: |
-          docker cp termux.apk android:/tmp/termux.apk
-          docker exec android adb install --no-streaming -r /tmp/termux.apk
-          docker exec android adb shell '
-            monkey -p com.termux -c android.intent.category.LAUNCHER 1
-            sleep 25
-          '
-
-      # ===============================
-      # Initial termux.sh
-      # ===============================
-      - name: Prepare termux.sh
-        run: |
-          curl -fL \
-            https://raw.githubusercontent.com/${{ github.repository }}/main/termux.sh \
-            -o termux.sh
-
-      - name: Push termux.sh to emulator
-        run: |
-          docker cp termux.sh android:/tmp/termux.sh
-          docker exec android adb push /tmp/termux.sh /data/local/tmp/termux.sh
-          docker exec android adb shell chmod 755 /data/local/tmp/termux.sh
-          docker exec android adb shell \
-            "run-as com.termux cp /data/local/tmp/termux.sh /data/data/com.termux/files/home/termux.sh"
-          docker exec android adb shell \
-            "run-as com.termux chmod +x /data/data/com.termux/files/home/termux.sh"
-
-      # ===============================
-      # Run Termux Script
-      # ===============================
-      - name: Run Termux build (smart retry)
-        run: |
-          docker exec android adb shell \
-            "run-as com.termux /data/data/com.termux/files/usr/bin/bash -c \
-            'cd /data/data/com.termux/files/home && ./termux.sh'"
+            if [ -n "$(git status --porcelain)" ]; then
+              git add README.md
+              git commit -m "ci: sync date"
+              git push
+            else
+              echo "No changes to commit"
+            fi
+          done
