@@ -310,3 +310,6 @@
 16:43:22 | depth=303227
 16:43:22 | pipeline_status=6759
 16:43:22 | proof=5a7f58a2efa4d617df3f78c10d7d8bcea25ca13aff806f9a2dbc11dcb5fd307d
+16:58:15 | depth=334275
+16:58:15 | pipeline_status=1967
+16:58:15 | proof=27fad1cdbe1f1f629b33b072fc18d44ffaf979adc452f4df2a60fd3227b2bebb
