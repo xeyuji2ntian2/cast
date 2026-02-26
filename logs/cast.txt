@@ -757,3 +757,6 @@
 06:13:09 | depth=190488
 06:13:09 | pipeline_status=7251
 06:13:09 | proof=c5dedaf5f1f7d940bcba4f15366b1a6d983a4e9b835b30a51eb439fd6f7e82ba
+06:28:09 | depth=258659
+06:28:09 | pipeline_status=1165
+06:28:09 | proof=d6bc0fbfd8db43096a78a9da699c8847be720df67ae0a4c4e0925eb784ed8241
