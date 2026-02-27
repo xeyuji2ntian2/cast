@@ -970,3 +970,6 @@
 23:58:10 | depth=156698
 23:58:10 | pipeline_status=9328
 23:58:10 | proof=bbbb385e343ca342b4a79162bfaba0a6061ff8d4b3507db3ed26ec685e57bb7c
+00:13:09 | depth=852537
+00:13:09 | pipeline_status=9164
+00:13:09 | proof=febe94a66b5756f3c959db4bb9b5e85b1411b8e4243a3736eaabfee918acd848
