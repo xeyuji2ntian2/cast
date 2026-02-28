@@ -1282,3 +1282,6 @@
 01:58:10 | depth=219773
 01:58:10 | pipeline_status=7607
 01:58:10 | proof=52dbf211844b3aed1007bbc209635ab6f46bf078ed4dfadecad58b0c4982dffc
+02:13:07 | depth=241651
+02:13:07 | pipeline_status=2791
+02:13:07 | proof=f7e8c50e122ea0ca80f2e1bbce2290de0c7be013984592ab0f98366f0bd133ff
