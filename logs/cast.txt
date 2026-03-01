@@ -1720,3 +1720,6 @@
 14:28:10 | depth=349843
 14:28:10 | pipeline_status=2460
 14:28:10 | proof=bbf3b3ad1e9f7f3d9cdccfa3c5aeaf0db6d49aceab7c35841b0df0a6a03440b1
+14:43:08 | depth=559497
+14:43:08 | pipeline_status=1254
+14:43:08 | proof=41061ff660abc39038b10f22564187a0d6aa0e3fb80a85a748b134fcf938af56
